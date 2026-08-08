@@ -361,7 +361,7 @@ function dbRowToSite(row) {
     lng: Number(row.lng),
     mapsUrl: row.maps_url,
     river: row.river,
-    stationId: row.station_id,
+    stationId: Number(row.station_id),
     stationCode: row.station_code,
     stationName: row.station_name,
     stationDistanceKm: row.station_distance_km,
@@ -404,6 +404,33 @@ async function fetchStationRange(stationId, startDate, endDate) {
   const url = `${API_BASE}/waterlevel_graph?station_type=tele_waterlevel&station_id=${stationId}&start_date=${startDate}&end_date=${endDate}`;
   const r = await fetch(url);
   return (await r.json()).data;
+}
+
+// New: read historical from Supabase readings table (bypasses ThaiWater CORS/hang)
+async function fetchRangeFromDB(siteId, startISO, endISO) {
+  const { data, error } = await sb
+    .from('water_tracker_readings')
+    .select('measured_at, wl_msl, wl_design')
+    .eq('site_id', siteId)
+    .gte('measured_at', startISO)
+    .lte('measured_at', endISO)
+    .order('measured_at', { ascending: true })
+    .limit(10000);
+  if (error) throw error;
+  // Decimate: keep max 500 points per chart for smooth render
+  const raw = data.map(r => ({
+    datetime: r.measured_at.replace('T', ' ').substring(0, 16),
+    value: Number(r.wl_msl),
+  }));
+  const MAX_POINTS = 500;
+  let decimated = raw;
+  if (raw.length > MAX_POINTS) {
+    const step = Math.ceil(raw.length / MAX_POINTS);
+    decimated = raw.filter((_, i) => i % step === 0);
+    // always include last point
+    if (decimated[decimated.length - 1] !== raw[raw.length - 1]) decimated.push(raw[raw.length - 1]);
+  }
+  return { graph_data: decimated, min_bank: null };
 }
 
 function fmtDate(d) {
@@ -704,7 +731,7 @@ function chartOpts() {
 async function renderRecentChart() {
   const now = new Date();
   const start = new Date(now.getTime() - 3*24*60*60*1000);
-  const data = await fetchStationRange(currentSite.stationId, fmtDateOnly(start), fmtDate(now));
+  const data = await fetchRangeFromDB(currentSite.id, start.toISOString(), now.toISOString());
   const isDesign = currentScale === 'design';
   const points = data.graph_data.map(p => ({
     x: new Date(p.datetime),
@@ -736,10 +763,10 @@ async function renderRecentChart() {
 async function renderHistoricalChart(days) {
   const now = new Date();
   const start = new Date(now.getTime() - days*24*60*60*1000);
-  const cacheKey = `${currentSite.stationId}-${days}`;
+  const cacheKey = `${currentSite.id}-${days}`;
   let data = rangeCache[cacheKey];
   if (!data) {
-    data = await fetchStationRange(currentSite.stationId, fmtDateOnly(start), fmtDate(now));
+    data = await fetchRangeFromDB(currentSite.id, start.toISOString(), now.toISOString());
     rangeCache[cacheKey] = data;
   }
   const isDesign = currentScale === 'design';
@@ -833,17 +860,47 @@ document.getElementById('scale-toggle').addEventListener('click', async (e) => {
 // ============================================================
 // LOAD
 // ============================================================
+// Fetch latest reading for one site from Supabase (source-of-truth, cron-fed)
+async function fetchLatestReadingFromDB(siteId) {
+  const { data, error } = await sb
+    .from('water_tracker_readings')
+    .select('site_id, station_id, measured_at, wl_msl, wl_design')
+    .eq('site_id', siteId)
+    .order('measured_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  // Shape it to mimic ThaiWater API's item structure so renderKPIs works unchanged
+  return {
+    station: { id: Number(data.station_id), min_bank: null, ground_level: null },
+    waterlevel_msl: String(data.wl_msl),
+    waterlevel_msl_previous: String(data.wl_msl), // no previous in DB yet — set = current so change = 0
+    waterlevel_datetime: data.measured_at.replace('T',' ').substring(0,16),
+  };
+}
+
 async function loadSite() {
   rangeCache = {};
   try {
     renderWarningBanner();
-    if (!allStations) allStations = await fetchCurrentAllStations();
-    currentReading = allStations.find(s => s.station.id === currentSite.stationId);
+    currentReading = await fetchLatestReadingFromDB(currentSite.id);
+    if (!currentReading) throw new Error('No readings for ' + currentSite.id + ' in DB yet');
+    // synthesize allStations minimal entry for renderSiteInfo bankMsl lookup
+    allStations = allStations || [];
+    if (!allStations.find(x => x.station.id === currentSite.stationId)) {
+      allStations.push({
+        station: { id: currentSite.stationId, min_bank: null, ground_level: null }
+      });
+    }
     renderSiteInfo();
     renderKPIs();
     renderCrossSection();
     await renderRecentChart();
     await renderHistoricalChart(currentDays);
+    // Show last-updated timestamp from DB reading
+    const el = document.getElementById('last-updated');
+    if (el) el.textContent = `Last update · ${currentReading.waterlevel_datetime} · station ${currentSite.thaiwaterStationCode || currentSite.stationId}`;
   } catch (e) {
     console.error(e);
     document.getElementById('kpi-row').innerHTML = `<div class="error">Load error: ${e.message}</div>`;
@@ -854,7 +911,7 @@ async function loadSite() {
 (async () => {
   try {
     const sites = await loadSitesFromSupabase();
-    if (sites.length > 0) {
+    if (sites && sites.length > 0) {
       SITES = sites;
       currentSite = SITES[0];
     }
@@ -862,7 +919,7 @@ async function loadSite() {
     console.warn('Supabase sites load failed, using fallback:', e);
   }
   renderSitePicker();
-  loadSite();
+  await loadSite();
 })();
 </script>
 </body>
