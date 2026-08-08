@@ -409,15 +409,28 @@ async function fetchStationRange(stationId, startDate, endDate) {
 }
 
 // New: read historical from Supabase readings table (bypasses ThaiWater CORS/hang)
+// For long ranges (>10k rows), use a server-side bucket aggregation via RPC-like query
 async function fetchRangeFromDB(siteId, startISO, endISO) {
-  const { data, error } = await sb
-    .from('water_tracker_readings')
-    .select('measured_at, wl_msl, wl_design')
-    .eq('site_id', siteId)
-    .gte('measured_at', startISO)
-    .lte('measured_at', endISO)
-    .order('measured_at', { ascending: true })
-    .limit(10000);
+  const spanMs = new Date(endISO) - new Date(startISO);
+  const spanDays = spanMs / 86400000;
+  // For 1yr+ we bucket to hourly avg server-side via RPC. Otherwise raw rows.
+  let data, error;
+  if (spanDays > 45) {
+    // Server-side bucket to keep result small AND cover full range
+    ({ data, error } = await sb.rpc('water_tracker_bucket', {
+      p_site: siteId, p_start: startISO, p_end: endISO,
+      p_bucket_mins: spanDays > 180 ? 720 : 60  // 12h buckets for >180d (~730 rows/yr), else hourly
+    }));
+  } else {
+    ({ data, error } = await sb
+      .from('water_tracker_readings')
+      .select('measured_at, wl_msl, wl_design')
+      .eq('site_id', siteId)
+      .gte('measured_at', startISO)
+      .lte('measured_at', endISO)
+      .order('measured_at', { ascending: true })
+      .limit(10000));
+  }
   if (error) throw error;
   // Decimate: keep max 500 points per chart for smooth render
   const raw = data.map(r => ({
