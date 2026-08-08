@@ -765,6 +765,7 @@ async function renderRecentChart() {
 async function renderHistoricalChart(days) {
   const now = new Date();
   const start = new Date(now.getTime() - days*24*60*60*1000);
+  window._histBounds = { start, end: now };
   const cacheKey = `${currentSite.id}-${days}`;
   let data = rangeCache[cacheKey];
   if (!data) {
@@ -780,10 +781,26 @@ async function renderHistoricalChart(days) {
   if (historicalChart) historicalChart.destroy();
   // Choose x-axis time unit based on range span so labels show dates, not repeating hours
   const xUnit = days <= 3 ? 'hour' : days <= 14 ? 'day' : days <= 60 ? 'day' : days <= 180 ? 'week' : 'month';
-  const xFormat = days <= 3 ? 'MMM d HH:mm' : days <= 60 ? 'MMM d' : days <= 180 ? "MMM d ''yy" : "MMM ''yy";
   const opts = chartOpts();
-  opts.scales.x.time = { unit: xUnit, tooltipFormat: 'yyyy-MM-dd HH:mm', displayFormats: { hour: 'MMM d HH:mm', day: 'MMM d', week: "MMM d", month: "MMM ''yy" } };
-  opts.scales.x.ticks = Object.assign({}, opts.scales.x.ticks, { maxRotation: 0, autoSkipPadding: 20 });
+  opts.scales.x.time = {
+    unit: xUnit,
+    tooltipFormat: 'yyyy-MM-dd HH:mm',
+    displayFormats: {
+      hour: 'MMM d HH:mm',
+      day: 'MMM d',
+      week: 'MMM d',
+      month: 'MMM yyyy'
+    }
+  };
+  opts.scales.x.ticks = Object.assign({}, opts.scales.x.ticks, {
+    maxRotation: 0,
+    autoSkip: true,
+    autoSkipPadding: 15,
+    maxTicksLimit: 12,
+    source: 'auto'
+  });
+  opts.scales.x.min = window._histBounds.start.valueOf();
+  opts.scales.x.max = window._histBounds.end.valueOf();
   historicalChart = new Chart(ctx, {
     type: 'line',
     data: {
