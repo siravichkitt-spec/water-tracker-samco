@@ -1,0 +1,79 @@
+[
+  {
+    "site": "นครชัยศรี",
+    "primary": {
+      "id": 2676,
+      "code": "T.1",
+      "name": "ที่ว่าการอ.นครชัยศรี",
+      "distance_km": 9.36,
+      "bank_msl": 1.5
+    },
+    "alt": {
+      "id": 748,
+      "code": "THA008",
+      "name": "สะพานนครชัยศรี",
+      "distance_km": 9.97,
+      "bank_msl": 1.95
+    },
+    "risks": "tidal river, station ห่าง 9-10 km → tidal lag 20-60 นาที ที่ site ต้อง verify",
+    "quality": "medium"
+  },
+  {
+    "site": "บึงกาฬ",
+    "primary": null,
+    "note": "⚠️ ThaiWater ไม่มี gauge บนแม่น้ำโขงตัวเอง (โขงเป็นแม่น้ำนานาชาติ, MRC monitor). Station ที่ใกล้ที่สุด (TKS.121 6.26 km) อยู่บนสาขา ไม่ใช่โขง",
+    "risks": "ต้องใช้ MRC data (Mekong River Commission) หรือ กรมทรัพยากรน้ำ — ไม่ครอบคลุมโดย ThaiWater",
+    "quality": "poor (no data source)",
+    "alt_source": "MRC portal (mrcmekong.org) มี Bueng Kan gauge · กรมทรัพยากรน้ำ hydro-2 · ThaiWater นครพนม/หนองคาย"
+  },
+  {
+    "site": "โคกสลุด",
+    "primary": {
+      "id": 667,
+      "code": "NAN006",
+      "name": "บางกระทุ่ม",
+      "distance_km": 0.78,
+      "bank_msl": 39.86
+    },
+    "risks": "ห่าง 0.78 km + non-tidal river = quality ดีมาก. Station bank=39.86 (msl)",
+    "quality": "excellent"
+  },
+  {
+    "site": "อ่างทอง",
+    "primary": {
+      "id": 2626,
+      "code": "C.7A",
+      "name": "บ้านบางแก้ว",
+      "distance_km": 2.73,
+      "bank_msl": 9.9
+    },
+    "alt": {
+      "id": 58,
+      "code": "CPY008",
+      "name": "เมืองอ่างทอง",
+      "distance_km": 3.92,
+      "bank_msl": 8.78
+    },
+    "risks": "ห่างเพียง 2.73 km, non-tidal (up-river from delta) + flow ควบคุมจาก ปตร.เจ้าพระยา — station bank=9.9 msl",
+    "quality": "excellent"
+  },
+  {
+    "site": "ปราจีนบุรี",
+    "primary": {
+      "id": 2680,
+      "code": "Kgt.3",
+      "name": "สะพานต้นน้ำบางปะกง",
+      "distance_km": 10.17,
+      "bank_msl": 8.79
+    },
+    "alt": {
+      "id": 162,
+      "code": "PRC001",
+      "name": "กบินทร์บุรี",
+      "distance_km": 10.18,
+      "bank_msl": 11.43
+    },
+    "risks": "10 km ห่าง แต่ non-tidal. Kgt.3 = ต้นน้ำ. PRC001 = กบินทร์บุรี. site อยู่ระหว่างสองสถานี",
+    "quality": "good"
+  }
+]

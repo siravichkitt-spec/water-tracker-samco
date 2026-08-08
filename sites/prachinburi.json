@@ -1,0 +1,52 @@
+{
+  "id": "prachinburi",
+  "name": "ปราจีนบุรี",
+  "projectRef": "SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำปราจีนบุรี หมู่ที่ 4 บ้านบัวขาว — กรมโยธาฯ",
+  "lat": 13.966917,
+  "lng": 101.613333,
+  "mapsUrl": "https://www.google.com/maps?q=13.966917,101.613333",
+  "river": "แม่น้ำปราจีนบุรี",
+  "location": "หมู่ 4 บ้านบัวขาว จ.ปราจีนบุรี",
+  "projectCode": "68-PRJ-S7-01",
+  "surveyDate": "พฤศจิกายน 2568",
+
+  "datumOffset": 91.000,
+  "datumOffsetSource": "9/10 BM หมุดตรงกัน 91.000 spot-on + WL อ้างอิง 2/3 ตรง — quality สูงสุดใน 5 sites",
+  "datumWarning": "BM04 ให้ offset 91.133 (ต่าง 133mm) — น่าจะ typo, MSL ควรเป็น 8.597 ไม่ใช่ 8.464. WL สูงสุดเฉลี่ย MSL=1.703 ผิดชัด (offset 97.8) — ควรเป็น 8.515. แม่น้ำปราจีนไม่ tidal (ห่างจากอ่าวไทย ~110km ต้นน้ำ)",
+
+  "bmData": [
+    {"id": "BM01",   "msl": 9.021, "design": 100.021, "offset": 91.000, "verified": true},
+    {"id": "BM02",   "msl": 9.017, "design": 100.017, "offset": 91.000, "verified": true},
+    {"id": "BM03",   "msl": 8.164, "design":  99.164, "offset": 91.000, "verified": true},
+    {"id": "BM04",   "msl": 8.464, "design":  99.597, "offset": 91.133, "verified": false, "note": "possible typo — MSL ควรเป็น 8.597"},
+    {"id": "BM05",   "msl": 8.370, "design":  99.370, "offset": 91.000, "verified": true},
+    {"id": "BM06",   "msl": 8.008, "design":  99.008, "offset": 91.000, "verified": true},
+    {"id": "TBM1",   "msl": 8.869, "design":  99.869, "offset": 91.000, "verified": true},
+    {"id": "TBM1/1", "msl": 8.257, "design":  99.257, "offset": 91.000, "verified": true},
+    {"id": "TBM2",   "msl": 7.981, "design":  98.981, "offset": 91.000, "verified": true},
+    {"id": "TBM3",   "msl": 8.676, "design":  99.687, "offset": 91.011, "verified": true}
+  ],
+
+  "designLevels": [
+    {"label": "ระดับสันเขื่อน", "value": 100.000, "color": "#fbbf24", "kind": "crest"},
+    {"label": "ระดับสันหินเรียง", "value": 97.500, "color": "#fb923c", "kind": "riprap"}
+  ],
+
+  "referenceWaterLevels": [
+    {"label": "น้ำสูงสุดเฉลี่ย", "value": 99.515, "color": "#ef4444"},
+    {"label": "น้ำเฉลี่ยสำรวจ (พ.ย. 2568)", "value": 94.290, "color": "#94a3c4"},
+    {"label": "น้ำต่ำสุดเฉลี่ย", "value": 92.174, "color": "#94a3c4"}
+  ],
+
+  "pileInfo": {
+    "typeA": "0.30×0.50×11.00 ม. cut-off +1.00",
+    "typeB": "0.30×0.40×11.00 ม. cut-off +1.00"
+  },
+
+  "stationId": 2680,
+  "stationCode": "Kgt.3",
+  "stationName": "สะพานต้นน้ำบางปะกง (กบินทร์บุรี)",
+  "stationDistanceKm": 10.17,
+  "stationBankMsl": 8.79,
+  "stationNote": "Kgt.3 สะพานต้นน้ำบางปะกง 10 km เหนือ site. Sanity check: WL max design +99.515 = MSL +8.515 vs Kgt.3 bank +8.79 = ต่าง 27cm — แม่นมาก"
+}

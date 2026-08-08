@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Water Level Tracker — SAMCO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+:root {
+  --bg: #0b1220;
+  --surface: #131c2e;
+  --surface-2: #1a2540;
+  --border: #263152;
+  --text: #e6ecf7;
+  --text-dim: #94a3c4;
+  --accent: #3ec6ff;
+  --accent-2: #6ee7b7;
+  --warn: #fbbf24;
+  --danger: #ef4444;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { font-family: 'IBM Plex Sans Thai', system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+.container { max-width: 1400px; margin: 0 auto; padding: 24px 20px 80px; }
+
+header { display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 20px; border-bottom: 1px solid var(--border); margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
+h1 .sub { color: var(--text-dim); font-weight: 400; font-size: 15px; margin-left: 8px; }
+.meta { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
+
+.site-picker { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.site-picker button { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; transition: all 0.15s; }
+.site-picker button:hover { border-color: var(--accent); }
+.site-picker button.active { background: var(--accent); color: var(--bg); border-color: var(--accent); font-weight: 500; }
+
+.warning-banner { background: rgba(251,191,36,0.08); border: 1px solid rgba(251,191,36,0.4); color: #fde68a; padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 20px; line-height: 1.65; }
+.warning-banner strong { color: #fbbf24; }
+.warning-banner code { background: rgba(0,0,0,0.3); padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.warning-banner em { color: #fcd34d; font-style: normal; }
+
+.grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 16px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; }
+.card h3 { font-size: 12px; font-weight: 500; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.card-header { display: flex; align-items: center; margin-bottom: 12px; gap: 12px; }
+.card-header h3 { margin-bottom: 0; }
+
+.col-4 { grid-column: span 4; }
+.col-6 { grid-column: span 6; }
+.col-8 { grid-column: span 8; }
+.col-12 { grid-column: span 12; }
+@media (max-width: 900px) { .col-4, .col-6, .col-8 { grid-column: span 12; } }
+
+.scale-toggle { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-left: auto; }
+.scale-toggle button { background: transparent; border: none; color: var(--text-dim); padding: 5px 12px; cursor: pointer; font-family: inherit; font-size: 12px; }
+.scale-toggle button.active { background: var(--accent); color: var(--bg); font-weight: 500; }
+
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 700px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+.kpi { background: var(--surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--border); }
+.kpi-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+.dual-value { display: flex; flex-direction: column; gap: 2px; }
+.dual-value .primary { font-family: 'JetBrains Mono', monospace; font-size: 20px; font-weight: 500; line-height: 1.2; }
+.dual-value .secondary { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text-dim); }
+.dual-value .secondary::before { content: '↳ '; opacity: 0.6; }
+.pos { color: var(--accent-2); }
+.neg { color: var(--danger); }
+.warn { color: var(--warn); }
+
+.chart-container { position: relative; height: 340px; }
+.chart-container.small { height: 220px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+table th, table td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--border); }
+table th { color: var(--text-dim); font-weight: 500; font-size: 11px; text-transform: uppercase; }
+table td:first-child, table th:first-child { text-align: left; font-family: 'IBM Plex Sans Thai', sans-serif; }
+
+.station-info { font-size: 13px; line-height: 1.7; }
+.station-info dt { color: var(--text-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 8px; }
+.station-info dd { font-family: 'JetBrains Mono', monospace; word-break: break-word; }
+
+.tabs { display: flex; gap: 4px; margin-bottom: 12px; border-bottom: 1px solid var(--border); }
+.tabs button { background: transparent; border: none; color: var(--text-dim); padding: 8px 14px; cursor: pointer; font-family: inherit; font-size: 13px; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tabs button.active { color: var(--accent); border-bottom-color: var(--accent); }
+.tabs button:hover { color: var(--text); }
+
+.loading { text-align: center; padding: 40px; color: var(--text-dim); font-size: 13px; }
+.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fecaca; padding: 12px; border-radius: 8px; font-size: 13px; }
+
+.map-link { color: var(--accent); text-decoration: none; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
+.map-link:hover { text-decoration: underline; }
+
+.legend { display: flex; gap: 16px; font-size: 12px; margin-top: 8px; flex-wrap: wrap; }
+.legend-item { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+.legend-swatch { width: 20px; height: 3px; border-radius: 2px; }
+
+.section-drawing { display: flex; gap: 20px; flex-wrap: wrap; }
+.section-drawing .drawing-svg { flex: 1; min-width: 280px; }
+.section-drawing .drawing-notes { flex: 1; min-width: 240px; font-size: 12px; }
+.drawing-notes ul { list-style: none; }
+.drawing-notes li { padding: 4px 0; display: flex; justify-content: space-between; border-bottom: 1px dashed var(--border); gap: 8px; }
+.drawing-notes li span:first-child { color: var(--text-dim); }
+.drawing-notes li span:last-child { font-family: 'JetBrains Mono', monospace; }
+.drawing-notes li.current { color: var(--accent); }
+.drawing-notes li.current span:first-child { color: var(--accent); }
+.drawing-notes li.header { font-weight: 600; color: var(--text) !important; border-bottom: 1px solid var(--border); padding: 8px 0 4px; }
+.drawing-notes li.header span:first-child { color: var(--text); }
+
+.footer-note { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim); line-height: 1.75; }
+.footer-note strong { color: var(--text); }
+.footer-note code { background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<header>
+  <div>
+    <h1>Water Level Tracker <span class="sub">— SAMCO Bank Protection Sites</span></h1>
+  </div>
+  <div class="meta" id="last-updated">Loading…</div>
+</header>
+
+<div class="site-picker" id="site-picker"></div>
+
+<div class="warning-banner" id="datum-warning"></div>
+
+<div class="grid" style="margin-bottom: 20px;">
+  <div class="card col-4">
+    <h3>Site Info</h3>
+    <dl class="station-info" id="site-info"></dl>
+  </div>
+  <div class="card col-8">
+    <div class="card-header">
+      <h3>Realtime Reading — 2 datums</h3>
+      <div class="scale-toggle" id="scale-toggle">
+        <button data-scale="design" class="active">สเกลแบบ (+ ม.)</button>
+        <button data-scale="msl">ม.รทก.</button>
+      </div>
+    </div>
+    <div class="kpi-row" id="kpi-row"></div>
+    <div class="legend" style="margin-top: 14px;">
+      <div class="legend-item"><span class="legend-swatch" style="background:#3ec6ff"></span>ระดับน้ำ</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#ef4444"></span>น้ำสูงสุดเฉลี่ย (แบบ)</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#fbbf24"></span>สันเขื่อน</div>
+      <div class="legend-item"><span class="legend-swatch" style="background:#a78bfa"></span>เสาเข็มเสริมกำลังดิน</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid" style="margin-bottom: 20px;">
+  <div class="card col-6">
+    <h3>Cross-Section (แบบเขื่อน + น้ำ live)</h3>
+    <div class="section-drawing">
+      <svg class="drawing-svg" id="section-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto"></svg>
+      <div class="drawing-notes">
+        <ul id="section-legend"></ul>
+      </div>
+    </div>
+  </div>
+  <div class="card col-6">
+    <h3>Recent Range (3 วัน, 10-min telemetry)</h3>
+    <div class="chart-container small"><canvas id="chart-recent"></canvas></div>
+  </div>
+</div>
+
+<div class="grid" style="margin-bottom: 20px;">
+  <div class="card col-12">
+    <div class="tabs" id="historical-tabs">
+      <button data-days="3" class="active">3 วัน</button>
+      <button data-days="7">7 วัน</button>
+      <button data-days="30">30 วัน</button>
+    </div>
+    <div class="chart-container"><canvas id="chart-historical"></canvas></div>
+  </div>
+</div>
+
+<div class="grid">
+  <div class="card col-12">
+    <h3>Daily Statistics (จาก 10-min data)</h3>
+    <div style="overflow-x:auto">
+      <table id="daily-table">
+        <thead>
+          <tr><th>วันที่</th><th>Min</th><th>Max</th><th>Avg</th><th>Range (ทะเลขึ้น-ลง)</th><th>ต่ำกว่าสันเขื่อน (min)</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="footer-note">
+  <strong>Data:</strong> ThaiWater / สสน. — <code>api-v3.thaiwater.net</code> · หน่วยจาก API เป็น <strong>ม.รทก.</strong> · แปลงเป็น<strong>สเกลแบบ</strong>ด้วยสูตร <code>design = msl + offset</code><br>
+  <strong>Offset (นครชัยศรี):</strong> <code>+96.691 ม.</code> จาก BM-02/03/04 ใน PDF ตารางที่ 2 (ยัง unverified — ต้องเทียบกับ staff gauge จริง)<br>
+  <strong>To do ก่อน production:</strong> (1) verify offset กับหมุด BM จริงที่ site 3-5 ครั้ง/วัน 1-2 สัปดาห์ (2) เปลี่ยน <code>designLevels</code> จากแบบมาตรฐานเป็นแบบก่อสร้างจริง (3) ตรวจ BM-01 กับทีมสำรวจว่า typo หรือไม่
+</div>
+
+</div>
+
+<script>
+// ============================================================
+// SITE CONFIGURATION
+// ============================================================
+// SITES loaded from Supabase at runtime; hardcoded array kept as fallback only
+const SITES_FALLBACK = [
+  {
+    id: 'thachin-nakhonchaisi',
+    name: 'นครชัยศรี (ท่าจีน)',
+    projectRef: 'SAMCO · เขื่อนป้องกันตลิ่ง — กรมโยธาฯ (67-NPT-S04)',
+    lat: 13.8793889,
+    lng: 100.2196111,
+    mapsUrl: 'https://maps.app.goo.gl/LexisKULLpUFXxbHA',
+    stationId: 748,
+    stationCode: 'THA008',
+    stationName: 'สะพานนครชัยศรี',
+    stationDistanceKm: 10.0,
+    river: 'แม่น้ำท่าจีน',
+    datumOffset: 96.691,
+    datumOffsetSource: 'BM-02/03/04 จากตารางที่ 2 โครงการ 67-NPT-S04',
+    datumWarning: 'BM-01 ในตารางให้ offset 96.891 (ต่างจากอีก 3 หมุด 200mm) — น่าจะ typo. Tidal lag จาก station THA008 (ห่าง 10 km) อาจ ±0.1-0.3 ม.',
+    designLevels: [
+      { label: 'ระดับสันเขื่อน', value: 100.00, color: '#fbbf24', kind: 'crest' },
+      { label: 'ระดับสันหินทิ้ง', value: 98.00, color: '#fb923c', kind: 'riprap' },
+      { label: 'เสาเข็มเสริมกำลังดิน +97', value: 97.00, color: '#a78bfa', kind: 'pile' },
+      { label: 'เสาเข็มเสริมกำลังดิน +96', value: 96.00, color: '#a78bfa', kind: 'pile' },
+      { label: 'เสาเข็มเสริมกำลังดิน +95', value: 95.00, color: '#a78bfa', kind: 'pile' },
+    ],
+    referenceWaterLevels: [
+      { label: 'น้ำสูงสุดเฉลี่ย', value: 99.5, color: '#ef4444' },
+      { label: 'น้ำเฉลี่ยสำรวจ', value: 97.9, color: '#94a3c4' },
+      { label: 'น้ำต่ำสุดเฉลี่ย', value: 96.6, color: '#94a3c4' },
+    ],
+  },
+
+  {
+    id: 'khoksalut-nan',
+    name: 'โคกสลุด (น่าน)',
+    projectRef: 'SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำน่าน หมู่ 5 — กรมโยธาฯ',
+    lat: 16.575737,
+    lng: 100.243984,
+    mapsUrl: 'https://maps.google.com/?q=16.575737,100.243984',
+    stationId: 667,
+    stationCode: 'NAN006',
+    stationName: 'บางกระทุ่ม (แม่น้ำน่าน)',
+    stationDistanceKm: 0.78,
+    river: 'แม่น้ำน่าน',
+    datumOffset: 59.777,
+    datumOffsetSource: 'BM-1/BM-2/BM-3 + GPS-NAN2-V06-1/V06-2 — 5 หมุด offset 59.7770 ตรงกัน spread 0mm (quality สูงสุดใน 5 sites)',
+    datumWarning: 'Offset สะอาดที่สุด 5/5 หมุด verified. Sanity check MSL max design +99.780 = MSL +40.003 vs NAN006 bank +39.86 (ห่าง 0.78 km) → ต่างเพียง 14 cm. Excellent quality',
+    designLevels: [
+      { label: 'ระดับสันเขื่อน', value: 100.50, color: '#fbbf24', kind: 'crest' },
+      { label: 'ระดับสันหินทิ้ง', value: 98.00, color: '#fb923c', kind: 'riprap' },
+      { label: 'หัวเสาเข็มเสริมกำลังดิน', value: 92.50, color: '#a78bfa', kind: 'pile' },
+      { label: 'ระดับหินเรียง', value: 91.50, color: '#94a3c4', kind: 'riprap' },
+    ],
+    referenceWaterLevels: [
+      { label: 'น้ำสูงสุดเฉลี่ย', value: 99.780, color: '#ef4444' },
+      { label: 'น้ำเฉลี่ยสำรวจ', value: 90.583, color: '#94a3c4' },
+      { label: 'น้ำต่ำสุดเฉลี่ย', value: 88.800, color: '#94a3c4' },
+    ],
+  },
+
+  {
+    id: 'angthong-bangkaew',
+    name: 'อ่างทอง (คลองบางแก้ว)',
+    projectRef: 'SAMCO · เขื่อนป้องกันตลิ่งริมคลองบางแก้ว หมู่ 8 ต.บ้านอิฐ อ.เมือง จ.อ่างทอง (D680P08)',
+    lat: 14.598244,
+    lng: 100.477570,
+    mapsUrl: 'https://www.google.com/maps?q=14.598244,100.477570',
+    stationId: 2626,
+    stationCode: 'C.7A',
+    stationName: 'บ้านบางแก้ว (แม่น้ำเจ้าพระยา)',
+    stationDistanceKm: 2.73,
+    river: 'คลองบางแก้ว (สาขาแม่น้ำเจ้าพระยา)',
+    datumOffset: 91.421,
+    datumOffsetSource: 'GPS01 (สมมุติ 101.634 / MSL 10.213) + GPS02 (สมมุติ 100.000 / MSL 8.579) → offset 91.421 ตรงกัน spot-on ทั้ง 2 หมุด',
+    datumWarning: 'C.7A บ้านบางแก้ว บนแม่น้ำเจ้าพระยาหลัก (2.73 km) แต่ site อยู่บนคลองบางแก้ว (สาขา) — ระดับน้ำจริงที่ site จะต่ำกว่า C.7A ประมาณ 5-6 m (WL max design +94.958 = MSL +3.537 vs C.7A bank +9.9)',
+    designLevels: [
+      { label: 'ระดับสันเขื่อน', value: 96.500, color: '#fbbf24', kind: 'crest' },
+      { label: 'ระดับสันหินเรียง', value: 95.500, color: '#fb923c', kind: 'riprap' },
+    ],
+    referenceWaterLevels: [
+      { label: 'น้ำท่วมเฉลี่ย (2554)', value: 95.424, color: '#ef4444' },
+      { label: 'น้ำสูงสุดเฉลี่ย', value: 94.958, color: '#f97316' },
+      { label: 'น้ำขณะสำรวจ (24-09-2567)', value: 93.869, color: '#94a3c4' },
+      { label: 'น้ำต่ำสุดเฉลี่ย', value: 90.711, color: '#94a3c4' },
+    ],
+  },
+
+  {
+    id: 'prachinburi',
+    name: 'ปราจีนบุรี',
+    projectRef: 'SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำปราจีนบุรี ต.ศาลาลำดวน อ.เมือง จ.ปราจีนบุรี (68-PRJ-S7-01)',
+    lat: 13.966917,
+    lng: 101.613333,
+    mapsUrl: 'https://www.google.com/maps?q=13.966917,101.613333',
+    stationId: 2680,
+    stationCode: 'Kgt.3',
+    stationName: 'สะพานต้นน้ำบางปะกง (กบินทร์บุรี)',
+    stationDistanceKm: 10.17,
+    river: 'แม่น้ำปราจีนบุรี',
+    datumOffset: 91.000,
+    datumOffsetSource: '9/10 หมุด BM offset ตรงกัน 91.000 spot-on + 2/3 WL อ้างอิงตรง (BM01/BM02/BM03/BM05/BM06/TBM1/TBM1-1/TBM2/TBM3 = 91.000, TBM3 = 91.011)',
+    datumWarning: 'BM04 outlier offset 91.133 (ต่าง 133mm) — น่าจะ typo. Sanity check: WL max design +99.515 = MSL +8.515 vs Kgt.3 bank +8.79 (10 km ห่าง) → ต่าง 27cm — แม่นมาก',
+    designLevels: [
+      { label: 'ระดับสันเขื่อน', value: 100.000, color: '#fbbf24', kind: 'crest' },
+      { label: 'ระดับสันหินเรียง', value: 97.500, color: '#fb923c', kind: 'riprap' },
+    ],
+    referenceWaterLevels: [
+      { label: 'น้ำสูงสุดเฉลี่ย', value: 99.515, color: '#ef4444' },
+      { label: 'น้ำเฉลี่ยสำรวจ (พ.ย. 2568)', value: 94.290, color: '#94a3c4' },
+      { label: 'น้ำต่ำสุดเฉลี่ย', value: 92.174, color: '#94a3c4' },
+    ],
+  },
+
+  {
+    id: 'buengkan-nam-hi',
+    name: 'บึงกาฬ (แม่น้ำฮี้)',
+    projectRef: 'SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำฮี้ หมู่ 9 ต.ป่งไฮ อ.เซกา จ.บึงกาฬ (D670257)',
+    lat: 18.011223,
+    lng: 103.872809,
+    mapsUrl: 'https://www.google.com/maps?q=18.011223,103.872809',
+    stationId: 11688687,
+    stationCode: 'TKS.121',
+    stationName: 'บ้านป่งไฮ (RID hydro)',
+    stationDistanceKm: 5.6,
+    river: 'แม่น้ำฮี้ (สาขาแม่น้ำสงคราม → โขง)',
+    datumOffset: 0.000,
+    datumOffsetLocalDatum: true,
+    datumOffsetSource: 'แบบใช้ local datum อ้าง 66-BK04-1 = 100.600 ม. (แบบเดิม ปีงบประมาณ 2567) — ไม่ใช่ MSL สากล',
+    datumWarning: '⚠️ CRITICAL: ค่า "สมมุติ" ในแบบเป็น LOCAL DATUM ไม่ใช่ MSL สากล. ThaiWater TKS.121 รายงาน WL ~185 mMSL แต่แบบระบุ WL max +99.8 → offset ที่แท้จริงประมาณ 85-87 m ไม่ใช่ 0. ต้อง cross-check ที่ site ก่อนใช้เชิงตัวเลข. Chart แสดงในสเกล MSL ตามที่ ThaiWater รายงาน — ห้ามใช้เปรียบเทียบกับ design ตรงๆ',
+    designLevels: [
+      { label: 'ระดับสันเขื่อน', value: 100.50, color: '#fbbf24', kind: 'crest' },
+      { label: 'ระดับสันหินทิ้ง', value: 98.50, color: '#fb923c', kind: 'riprap' },
+    ],
+    referenceWaterLevels: [
+      { label: 'น้ำสูงสุดเฉลี่ย', value: 99.800, color: '#ef4444' },
+      { label: 'น้ำขณะสำรวจ', value: 95.600, color: '#94a3c4' },
+      { label: 'น้ำต่ำสุดเฉลี่ย', value: 93.800, color: '#94a3c4' },
+    ],
+  },
+];
+
+// ============================================================
+// SUPABASE CLIENT (backend for sites config + historical readings + alerts)
+// ============================================================
+const SB_URL = 'https://yiyoagypmcnatdauuadf.supabase.co';
+const SB_ANON = 'sb_publishable_QLWNOTvjiait7wY7_v5IpA_P4KstVeh';
+const sb = window.supabase.createClient(SB_URL, SB_ANON);
+
+// Map DB row (snake_case) -> UI object (camelCase)
+function dbRowToSite(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    projectRef: row.project_ref,
+    lat: Number(row.lat),
+    lng: Number(row.lng),
+    mapsUrl: row.maps_url,
+    river: row.river,
+    stationId: row.station_id,
+    stationCode: row.station_code,
+    stationName: row.station_name,
+    stationDistanceKm: row.station_distance_km,
+    stationBankMsl: row.station_bank_msl,
+    stationNote: row.station_note,
+    datumOffset: Number(row.datum_offset),
+    datumOffsetSource: row.datum_offset_source,
+    datumWarning: row.datum_warning,
+    datumOffsetLocal: !!row.datum_offset_local,
+    designLevels: Array.isArray(row.design_levels) ? row.design_levels : [],
+    referenceWaterLevels: Array.isArray(row.reference_water_levels) ? row.reference_water_levels : [],
+    alertWarnDesignLevel: row.alert_warn_design_level,
+    alertCritDesignLevel: row.alert_crit_design_level,
+  };
+}
+
+async function loadSitesFromSupabase() {
+  const { data, error } = await sb
+    .from('water_tracker_sites')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+  if (error) throw error;
+  return data.map(dbRowToSite);
+}
+
+let SITES = SITES_FALLBACK; // replaced at boot
+
+// ============================================================
+// API HELPERS
+// ============================================================
+const API_BASE = 'https://api-v3.thaiwater.net/api/v1/thaiwater30/public';
+
+async function fetchCurrentAllStations() {
+  const r = await fetch(`${API_BASE}/waterlevel_load`);
+  return (await r.json()).waterlevel_data.data;
+}
+
+async function fetchStationRange(stationId, startDate, endDate) {
+  const url = `${API_BASE}/waterlevel_graph?station_type=tele_waterlevel&station_id=${stationId}&start_date=${startDate}&end_date=${endDate}`;
+  const r = await fetch(url);
+  return (await r.json()).data;
+}
+
+function fmtDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${y}-${m}-${day} ${hh}:${mm}`;
+}
+function fmtDateOnly(d) { return fmtDate(d).slice(0,10); }
+
+// ============================================================
+// STATE
+// ============================================================
+let currentSite = SITES[0];
+let currentScale = 'design';   // 'design' | 'msl'
+let currentDays = 3;
+let recentChart = null;
+let historicalChart = null;
+let allStations = null;
+let currentReading = null;
+let rangeCache = {};
+
+// ============================================================
+// DATUM HELPERS
+// ============================================================
+function msl2design(v) { return v + currentSite.datumOffset; }
+function design2msl(v) { return v - currentSite.datumOffset; }
+
+// ============================================================
+// RENDER: STATIC
+// ============================================================
+function renderSitePicker() {
+  const el = document.getElementById('site-picker');
+  el.innerHTML = SITES.map(s => `<button data-id="${s.id}" class="${s.id===currentSite.id?'active':''}">${s.name}</button>`).join('');
+  el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
+    currentSite = SITES.find(s => s.id === b.dataset.id);
+    renderSitePicker();
+    loadSite();
+  }));
+}
+
+function renderWarningBanner() {
+  const s = currentSite;
+  document.getElementById('datum-warning').innerHTML = `
+    <strong>⚠️ Datum conversion — unverified</strong> · ใช้ offset <code>+${s.datumOffset.toFixed(3)}</code> ม. (สเกลแบบ = ม.รทก. + offset)<br>
+    <em>ที่มา:</em> ${s.datumOffsetSource}<br>
+    <em>ข้อจำกัด:</em> ${s.datumWarning}
+  `;
+}
+
+function renderSiteInfo() {
+  const s = currentSite;
+  const st = allStations?.find(x => x.station.id === s.stationId);
+  const bankMsl = st?.station?.min_bank ?? null;
+  const bankDesign = bankMsl !== null ? msl2design(bankMsl) : null;
+  document.getElementById('site-info').innerHTML = `
+    <dt>Project</dt><dd style="font-family:inherit">${s.projectRef}</dd>
+    <dt>Location</dt><dd>${s.lat}, ${s.lng} · <a class="map-link" href="${s.mapsUrl}" target="_blank">แผนที่ →</a></dd>
+    <dt>River / Basin</dt><dd style="font-family:inherit">${s.river} · ลุ่มน้ำท่าจีน</dd>
+    <dt>Nearest Station</dt><dd style="font-family:inherit">${s.stationName} (${s.stationCode}) · ห่าง ${s.stationDistanceKm} km</dd>
+    <dt>Datum offset</dt><dd>+${s.datumOffset.toFixed(3)} ม.</dd>
+    <dt>Station Bank</dt><dd>${bankMsl!==null?bankMsl.toFixed(3)+' ม.รทก. → +'+bankDesign.toFixed(3):'—'}</dd>
+    <dt>Station Ground</dt><dd>${st?.station?.ground_level!==undefined?st.station.ground_level+' ม.รทก.':'—'}</dd>
+  `;
+}
+
+// ============================================================
+// RENDER: KPI ROW (dual scale)
+// ============================================================
+function renderKPIs() {
+  const s = currentSite;
+  const r = currentReading;
+  if (!r) {
+    document.getElementById('kpi-row').innerHTML = '<div class="loading">Loading…</div>';
+    return;
+  }
+  const wlMsl = parseFloat(r.waterlevel_msl);
+  const wlDesign = msl2design(wlMsl);
+  const prev = parseFloat(r.waterlevel_msl_previous);
+  const change = wlMsl - prev;
+
+  const crest = s.designLevels.find(d => d.kind === 'crest');
+  const highestPile = Math.max(...s.designLevels.filter(d => d.kind === 'pile').map(d => d.value));
+  const distToCrest = crest ? crest.value - wlDesign : null;
+  const distToPileTop = highestPile - wlDesign;
+
+  const isDesign = currentScale === 'design';
+  const primaryWl = isDesign ? `+${wlDesign.toFixed(3)}` : wlMsl.toFixed(3);
+  const secondaryWl = isDesign ? `${wlMsl.toFixed(3)} ม.รทก.` : `+${wlDesign.toFixed(3)} สเกลแบบ`;
+
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="kpi">
+      <div class="kpi-label">ระดับน้ำล่าสุด</div>
+      <div class="dual-value">
+        <span class="primary">${primaryWl}</span>
+        <span class="secondary">${secondaryWl}</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Change vs Previous</div>
+      <div class="dual-value">
+        <span class="primary ${change>=0?'pos':'neg'}">${change>=0?'+':''}${change.toFixed(3)} ม.</span>
+        <span class="secondary">${r.waterlevel_datetime}</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">ต่ำกว่าสันเขื่อน</div>
+      <div class="dual-value">
+        <span class="primary ${distToCrest>1?'pos':distToCrest>0?'warn':'neg'}">${distToCrest!==null?distToCrest.toFixed(2)+' ม.':'—'}</span>
+        <span class="secondary">สันเขื่อน = +${crest?crest.value.toFixed(2):'?'}</span>
+      </div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">ต่ำกว่าเสาเข็มตัวบน</div>
+      <div class="dual-value">
+        <span class="primary ${distToPileTop>0.5?'pos':distToPileTop>0?'warn':'neg'}">${distToPileTop.toFixed(2)} ม.</span>
+        <span class="secondary">pile top = +${highestPile.toFixed(2)}</span>
+      </div>
+    </div>
+  `;
+  document.getElementById('last-updated').textContent = `Last update · ${r.waterlevel_datetime} · station ${s.stationCode}`;
+}
+
+// ============================================================
+// RENDER: CROSS-SECTION (SVG)
+// ============================================================
+function renderCrossSection() {
+  const s = currentSite;
+  const r = currentReading;
+  const svg = document.getElementById('section-svg');
+  const legend = document.getElementById('section-legend');
+
+  const currentWlDesign = r ? msl2design(parseFloat(r.waterlevel_msl)) : null;
+  const domainValues = s.designLevels.map(d => d.value).concat(s.referenceWaterLevels.map(d => d.value));
+  if (currentWlDesign !== null) domainValues.push(currentWlDesign);
+  const minY = Math.min(...domainValues) - 1.5;
+  const maxY = Math.max(...domainValues) + 1;
+  const W = 400, H = 300;
+  const yScale = v => H - ((v - minY) / (maxY - minY)) * (H - 20) - 10;
+
+  const wallX = 140;
+  let paths = '';
+  paths += `<path d="M0 ${yScale(100)} L${wallX} ${yScale(100)} L${wallX} ${yScale(98)} L${wallX+30} ${yScale(97)} L${wallX+60} ${yScale(96)} L${wallX+90} ${yScale(95)} L${W} ${yScale(94)} L${W} ${H} L0 ${H} Z" fill="#1a2540" stroke="#3d4d78" stroke-width="1"/>`;
+  paths += `<rect x="${wallX-6}" y="${yScale(100)}" width="6" height="${yScale(95)-yScale(100)}" fill="#4a5578" stroke="#6b7ba8" stroke-width="1"/>`;
+  for (let i=0; i<5; i++) {
+    const px = wallX + 15 + i*18;
+    paths += `<line x1="${px}" y1="${yScale(97-i*0.3)}" x2="${px}" y2="${yScale(85)}" stroke="#6b7ba8" stroke-width="1"/>`;
+  }
+
+  // LIVE water level (converted to design scale)
+  let waterWave = '';
+  if (currentWlDesign !== null) {
+    const wy = yScale(currentWlDesign);
+    waterWave = `<path d="M${wallX} ${wy} L${W} ${wy} L${W} ${H} L${wallX} ${H} Z" fill="#3ec6ff" opacity="0.2"/>
+      <line x1="${wallX}" y1="${wy}" x2="${W}" y2="${wy}" stroke="#3ec6ff" stroke-width="2"/>
+      <text x="${W-4}" y="${wy-4}" fill="#3ec6ff" font-size="10" text-anchor="end" font-family="JetBrains Mono, monospace" font-weight="600">◀ น้ำ +${currentWlDesign.toFixed(2)}</text>`;
+  }
+
+  // Reference lines (design levels only for section)
+  let lines = '';
+  s.designLevels.forEach(d => {
+    const y = yScale(d.value);
+    lines += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${d.color}" stroke-width="1" stroke-dasharray="4 3" opacity="0.55"/>`;
+  });
+  const crestLevel = s.designLevels.find(d => d.kind === 'crest');
+  if (crestLevel) {
+    const y = yScale(crestLevel.value);
+    lines += `<text x="6" y="${y-3}" fill="${crestLevel.color}" font-size="9" text-anchor="start" font-family="JetBrains Mono, monospace">สันเขื่อน +${crestLevel.value.toFixed(2)}</text>`;
+  }
+
+  svg.innerHTML = paths + waterWave + lines;
+
+  const designHtml = s.designLevels.map(d =>
+    `<li><span>${d.label}</span><span style="color:${d.color}">+${d.value.toFixed(2)}</span></li>`
+  ).join('');
+  const refHtml = s.referenceWaterLevels.map(d =>
+    `<li><span>${d.label}</span><span style="color:${d.color}">+${d.value.toFixed(2)}</span></li>`
+  ).join('');
+  const liveHtml = r ? `
+    <li class="current"><span>น้ำล่าสุด (สเกลแบบ)</span><span>+${currentWlDesign.toFixed(2)}</span></li>
+    <li><span>น้ำล่าสุด (ม.รทก.)</span><span>${parseFloat(r.waterlevel_msl).toFixed(2)}</span></li>
+  ` : '';
+  legend.innerHTML = `
+    <li class="header"><span>ระดับเขื่อน (แบบ)</span><span></span></li>
+    ${designHtml}
+    <li class="header"><span>ระดับน้ำอ้างอิง (แบบ)</span><span></span></li>
+    ${refHtml}
+    <li class="header"><span>ค่าล่าสุด (station)</span><span></span></li>
+    ${liveHtml}
+  `;
+}
+
+// ============================================================
+// CHART: reference-lines plugin
+// ============================================================
+const refLinesPlugin = {
+  id: 'refLines',
+  afterDraw(chart) {
+    const {ctx, chartArea, scales: {y}} = chart;
+    if (!chart._refLines) return;
+    chart._refLines.forEach(ref => {
+      const yPos = y.getPixelForValue(ref.value);
+      if (yPos < chartArea.top || yPos > chartArea.bottom) return;
+      ctx.save();
+      ctx.strokeStyle = ref.color;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([5, 3]);
+      ctx.beginPath();
+      ctx.moveTo(chartArea.left, yPos);
+      ctx.lineTo(chartArea.right, yPos);
+      ctx.stroke();
+      ctx.fillStyle = ref.color;
+      ctx.font = '10px JetBrains Mono';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${ref.label} ${ref.value.toFixed(2)}`, chartArea.right - 6, yPos - 3);
+      ctx.restore();
+    });
+  }
+};
+Chart.register(refLinesPlugin);
+
+function buildRefLines(stationBankMsl) {
+  const s = currentSite;
+  const isDesign = currentScale === 'design';
+  const conv = v => isDesign ? v : design2msl(v);
+  const refs = [];
+  s.designLevels.forEach(d => {
+    refs.push({ label: d.label.replace('ระดับ',''), value: conv(d.value), color: d.color });
+  });
+  s.referenceWaterLevels.forEach(d => {
+    refs.push({ label: d.label, value: conv(d.value), color: d.color });
+  });
+  if (stationBankMsl !== undefined && stationBankMsl !== null) {
+    const v = isDesign ? msl2design(stationBankMsl) : stationBankMsl;
+    refs.push({ label: 'ตลิ่ง(station)', value: v, color: '#94a3c4' });
+  }
+  return refs;
+}
+
+function attachRefLines(chart, stationBankMsl) {
+  chart._refLines = buildRefLines(stationBankMsl);
+  chart.update('none');
+}
+
+function chartOpts() {
+  const isDesign = currentScale === 'design';
+  const s = currentSite;
+  return {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { intersect: false, mode: 'index' },
+    scales: {
+      x: {
+        type: 'time',
+        time: { displayFormats: { day: 'MMM dd', hour: 'HH:mm' } },
+        grid: { color: 'rgba(148,163,196,0.08)' },
+        ticks: { color: '#94a3c4', font: { size: 10 } }
+      },
+      y: {
+        title: { display: true, text: isDesign ? 'ระดับน้ำ (สเกลแบบ, +ม.)' : 'ระดับน้ำ (ม.รทก.)', color: '#94a3c4', font: { size: 11 } },
+        grid: { color: 'rgba(148,163,196,0.08)' },
+        ticks: { color: '#94a3c4', font: { size: 10 } }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: '#131c2e',
+        borderColor: '#263152',
+        borderWidth: 1,
+        titleColor: '#e6ecf7',
+        bodyColor: '#e6ecf7',
+        callbacks: {
+          label: (ctx) => {
+            const y = ctx.parsed.y;
+            const design = isDesign ? y : msl2design(y);
+            const msl = isDesign ? design2msl(y) : y;
+            const crest = s.designLevels.find(d => d.kind === 'crest');
+            const diff = crest ? crest.value - design : null;
+            return [
+              `สเกลแบบ: +${design.toFixed(3)}`,
+              `ม.รทก.: ${msl.toFixed(3)}`,
+              diff !== null ? `↓ สันเขื่อน: ${diff.toFixed(2)} ม.` : ''
+            ].filter(Boolean);
+          }
+        }
+      }
+    },
+    animation: false
+  };
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+async function renderRecentChart() {
+  const now = new Date();
+  const start = new Date(now.getTime() - 3*24*60*60*1000);
+  const data = await fetchStationRange(currentSite.stationId, fmtDateOnly(start), fmtDate(now));
+  const isDesign = currentScale === 'design';
+  const points = data.graph_data.map(p => ({
+    x: new Date(p.datetime),
+    y: p.value === null ? null : (isDesign ? msl2design(p.value) : p.value)
+  }));
+
+  const ctx = document.getElementById('chart-recent').getContext('2d');
+  if (recentChart) recentChart.destroy();
+  recentChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'ระดับน้ำ',
+        data: points,
+        borderColor: '#3ec6ff',
+        backgroundColor: 'rgba(62,198,255,0.1)',
+        borderWidth: 1.5,
+        pointRadius: 0,
+        tension: 0.3,
+        fill: true,
+        spanGaps: false
+      }]
+    },
+    options: chartOpts()
+  });
+  attachRefLines(recentChart, data.min_bank);
+}
+
+async function renderHistoricalChart(days) {
+  const now = new Date();
+  const start = new Date(now.getTime() - days*24*60*60*1000);
+  const cacheKey = `${currentSite.stationId}-${days}`;
+  let data = rangeCache[cacheKey];
+  if (!data) {
+    data = await fetchStationRange(currentSite.stationId, fmtDateOnly(start), fmtDate(now));
+    rangeCache[cacheKey] = data;
+  }
+  const isDesign = currentScale === 'design';
+  const points = data.graph_data.map(p => ({
+    x: new Date(p.datetime),
+    y: p.value === null ? null : (isDesign ? msl2design(p.value) : p.value)
+  }));
+  const ctx = document.getElementById('chart-historical').getContext('2d');
+  if (historicalChart) historicalChart.destroy();
+  historicalChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [{
+        label: 'ระดับน้ำ',
+        data: points,
+        borderColor: '#3ec6ff',
+        backgroundColor: 'rgba(62,198,255,0.1)',
+        borderWidth: 1.2,
+        pointRadius: 0,
+        tension: 0.2,
+        fill: true,
+        spanGaps: false
+      }]
+    },
+    options: chartOpts()
+  });
+  attachRefLines(historicalChart, data.min_bank);
+  fillDailyTable(data.graph_data);
+}
+
+// ============================================================
+// DAILY TABLE
+// ============================================================
+function fillDailyTable(points) {
+  const s = currentSite;
+  const isDesign = currentScale === 'design';
+  const conv = v => isDesign ? msl2design(v) : v;
+  const crest = s.designLevels.find(d => d.kind === 'crest');
+  const crestVal = crest ? (isDesign ? crest.value : design2msl(crest.value)) : null;
+
+  const days = {};
+  points.forEach(p => {
+    if (p.value === null) return;
+    const day = p.datetime.slice(0,10);
+    if (!days[day]) days[day] = [];
+    days[day].push(conv(p.value));
+  });
+  const rows = Object.entries(days).sort((a,b)=>b[0].localeCompare(a[0])).slice(0, 30).map(([day, vals]) => {
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const avg = vals.reduce((a,b)=>a+b,0)/vals.length;
+    const range = max - min;
+    const distMin = crestVal !== null ? crestVal - max : null;
+    const distColor = distMin === null ? 'inherit' :
+                      distMin < 0.5 ? '#ef4444' :
+                      distMin < 1.0 ? '#fbbf24' : '#6ee7b7';
+    return `<tr>
+      <td>${day}</td>
+      <td>${min.toFixed(3)}</td>
+      <td>${max.toFixed(3)}</td>
+      <td>${avg.toFixed(3)}</td>
+      <td>${range.toFixed(3)}</td>
+      <td style="color:${distColor}">${distMin!==null?distMin.toFixed(2):'—'}</td>
+    </tr>`;
+  }).join('');
+  document.querySelector('#daily-table tbody').innerHTML = rows;
+}
+
+// ============================================================
+// EVENT WIRING
+// ============================================================
+document.getElementById('historical-tabs').addEventListener('click', async (e) => {
+  if (e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#historical-tabs button').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  currentDays = parseInt(e.target.dataset.days);
+  await renderHistoricalChart(currentDays);
+});
+
+document.getElementById('scale-toggle').addEventListener('click', async (e) => {
+  if (e.target.tagName !== 'BUTTON') return;
+  document.querySelectorAll('#scale-toggle button').forEach(b => b.classList.remove('active'));
+  e.target.classList.add('active');
+  currentScale = e.target.dataset.scale;
+  renderKPIs();
+  renderCrossSection();
+  await renderRecentChart();
+  await renderHistoricalChart(currentDays);
+});
+
+// ============================================================
+// LOAD
+// ============================================================
+async function loadSite() {
+  rangeCache = {};
+  try {
+    renderWarningBanner();
+    if (!allStations) allStations = await fetchCurrentAllStations();
+    currentReading = allStations.find(s => s.station.id === currentSite.stationId);
+    renderSiteInfo();
+    renderKPIs();
+    renderCrossSection();
+    await renderRecentChart();
+    await renderHistoricalChart(currentDays);
+  } catch (e) {
+    console.error(e);
+    document.getElementById('kpi-row').innerHTML = `<div class="error">Load error: ${e.message}</div>`;
+  }
+}
+
+// Boot: load sites from Supabase, then render
+(async () => {
+  try {
+    const sites = await loadSitesFromSupabase();
+    if (sites.length > 0) {
+      SITES = sites;
+      currentSite = SITES[0];
+    }
+  } catch (e) {
+    console.warn('Supabase sites load failed, using fallback:', e);
+  }
+  renderSitePicker();
+  loadSite();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+  "id": "angthong-bangkaew",
+  "name": "อ่างทอง (คลองบางแก้ว)",
+  "projectRef": "SAMCO · เขื่อนป้องกันตลิ่งริมคลองบางแก้ว หมู่ 8 ต.บ้านอิฐ อ.เมือง จ.อ่างทอง (D680P08)",
+  "lat": 14.598244,
+  "lng": 100.477570,
+  "mapsUrl": "https://www.google.com/maps?q=14.598244,100.477570",
+  "river": "คลองบางแก้ว (สาขาแม่น้ำเจ้าพระยา)",
+  "length_m": 379,
+  "surveyDate": "24-09-2567",
+
+  "datumOffset": 91.421,
+  "datumOffsetSource": "GPS01 (สมมุติ 101.634 / MSL 10.213) + GPS02 (สมมุติ 100.000 / MSL 8.579) → offset 91.421 ตรงกัน spot-on ทั้ง 2 หมุด",
+  "datumWarning": "แก้จากบันทึกก่อนหน้า — offset ที่ถูกคือ 91.421 (ไม่ใช่ 100.021). GPS01 สมมุติ +101.634 ตามที่บันทึกในตารางที่ 2 หน้าที่ 4 ของแบบ D680P08",
+
+  "bmData": [
+    {"id": "GPS01", "msl": 10.213, "design": 101.634, "offset": 91.421, "verified": true},
+    {"id": "GPS02", "msl": 8.579,  "design": 100.000, "offset": 91.421, "verified": true},
+    {"id": "BM01",  "msl": null,   "design": 98.087,  "offset": null,   "verified": false, "note": "ไม่มีค่า MSL ในแบบ"},
+    {"id": "BM02",  "msl": null,   "design": 99.294,  "offset": null,   "verified": false, "note": "ไม่มีค่า MSL ในแบบ"}
+  ],
+
+  "designLevels": [
+    {"label": "ระดับสันเขื่อน", "value": 96.500, "color": "#fbbf24", "kind": "crest"},
+    {"label": "ระดับสันหินเรียง", "value": 95.500, "color": "#fb923c", "kind": "riprap"}
+  ],
+
+  "referenceWaterLevels": [
+    {"label": "น้ำท่วมเฉลี่ย (2554)", "value": 95.424, "color": "#ef4444"},
+    {"label": "น้ำสูงสุดเฉลี่ย", "value": 94.958, "color": "#f97316"},
+    {"label": "น้ำต่ำสุดเฉลี่ย", "value": 90.711, "color": "#94a3c4"},
+    {"label": "น้ำขณะสำรวจ (24-09-2567)", "value": 93.869, "color": "#94a3c4"}
+  ],
+
+  "stationId": 2626,
+  "stationCode": "C.7A",
+  "stationName": "บ้านบางแก้ว (แม่น้ำเจ้าพระยา)",
+  "stationDistanceKm": 2.73,
+  "stationBankMsl": 9.9,
+  "stationNote": "C.7A บ้านบางแก้ว บนแม่น้ำเจ้าพระยา 2.73 km จาก site — แต่ site อยู่บนคลองบางแก้ว (สาขา) ไม่ใช่เจ้าพระยาหลัก ระดับจริงจะต่ำกว่า C.7A ประมาณ 5-6 m"
+}
