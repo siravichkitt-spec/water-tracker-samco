@@ -778,6 +778,12 @@ async function renderHistoricalChart(days) {
   }));
   const ctx = document.getElementById('chart-historical').getContext('2d');
   if (historicalChart) historicalChart.destroy();
+  // Choose x-axis time unit based on range span so labels show dates, not repeating hours
+  const xUnit = days <= 3 ? 'hour' : days <= 14 ? 'day' : days <= 60 ? 'day' : days <= 180 ? 'week' : 'month';
+  const xFormat = days <= 3 ? 'MMM d HH:mm' : days <= 60 ? 'MMM d' : days <= 180 ? "MMM d ''yy" : "MMM ''yy";
+  const opts = chartOpts();
+  opts.scales.x.time = { unit: xUnit, tooltipFormat: 'yyyy-MM-dd HH:mm', displayFormats: { hour: 'MMM d HH:mm', day: 'MMM d', week: "MMM d", month: "MMM ''yy" } };
+  opts.scales.x.ticks = Object.assign({}, opts.scales.x.ticks, { maxRotation: 0, autoSkipPadding: 20 });
   historicalChart = new Chart(ctx, {
     type: 'line',
     data: {
@@ -793,7 +799,7 @@ async function renderHistoricalChart(days) {
         spanGaps: false
       }]
     },
-    options: chartOpts()
+    options: opts
   });
   attachRefLines(historicalChart, data.min_bank);
   fillDailyTable(data.graph_data);
