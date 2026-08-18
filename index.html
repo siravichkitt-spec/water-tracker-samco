@@ -3,13 +3,15 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="samco-release" content="water-tracker-v3-20260818">
 <title>Water Level Tracker — SAMCO</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%233ec6ff'/%3E%3Cpath d='M32 12C24 24 18 31 18 40a14 14 0 0 0 28 0c0-9-6-16-14-28Z' fill='%230b1220'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
 <style>
 :root {
   --bg: #0b1220;
@@ -31,6 +33,12 @@ header { display: flex; justify-content: space-between; align-items: baseline; p
 h1 { font-size: 22px; font-weight: 600; letter-spacing: -0.01em; }
 h1 .sub { color: var(--text-dim); font-weight: 400; font-size: 15px; margin-left: 8px; }
 .meta { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--text-dim); }
+.status-line { display: flex; align-items: center; justify-content: flex-end; gap: 7px; }
+.status-dot { width: 8px; height: 8px; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 8px #94a3b8; }
+.status-dot.live { background: #22c55e; box-shadow: 0 0 8px #22c55e; animation: pulse 2s infinite; }
+.status-dot.delayed { background: #fbbf24; box-shadow: 0 0 8px #fbbf24; }
+.status-dot.stale, .status-dot.error { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+.status-detail { margin-top: 3px; text-align: right; font-size: 10px; }
 
 .site-picker { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
 .site-picker button { background: var(--surface); border: 1px solid var(--border); color: var(--text); padding: 8px 14px; border-radius: 8px; cursor: pointer; font-family: inherit; font-size: 13px; transition: all 0.15s; }
@@ -57,9 +65,15 @@ h1 .sub { color: var(--text-dim); font-weight: 400; font-size: 15px; margin-left
 .scale-toggle { display: inline-flex; background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; margin-left: auto; }
 .scale-toggle button { background: transparent; border: none; color: var(--text-dim); padding: 5px 12px; cursor: pointer; font-family: inherit; font-size: 12px; }
 .scale-toggle button.active { background: var(--accent); color: var(--bg); font-weight: 500; }
+.scale-toggle button:disabled { cursor: not-allowed; opacity: 0.35; }
 
 .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
-@media (max-width: 700px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 700px) {
+  .kpi-row { grid-template-columns: repeat(2, 1fr); }
+  .card-header { align-items: stretch; flex-direction: column; }
+  .scale-toggle { margin-left: 0; align-self: stretch; }
+  .scale-toggle button { flex: 1; white-space: nowrap; }
+}
 .kpi { background: var(--surface-2); padding: 14px; border-radius: 8px; border: 1px solid var(--border); }
 .kpi-label { font-size: 11px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
 .dual-value { display: flex; flex-direction: column; gap: 2px; }
@@ -123,8 +137,11 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
     <h1>Water Level Tracker <span class="sub">— SAMCO Bank Protection Sites</span></h1>
   </div>
   <div class="meta">
-    <span id="live-dot" style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#22c55e;box-shadow:0 0 8px #22c55e;margin-right:6px;animation:pulse 2s infinite;"></span>
-    <span id="last-updated">Loading…</span>
+    <div class="status-line">
+      <span id="live-dot" class="status-dot"></span>
+      <span id="last-updated">กำลังโหลดข้อมูล…</span>
+    </div>
+    <div id="connection-status" class="status-detail">กำลังเชื่อมต่อ Supabase Realtime</div>
   </div>
 </header>
 
@@ -139,7 +156,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
   </div>
   <div class="card col-8">
     <div class="card-header">
-      <h3>Realtime Reading — 2 datums</h3>
+      <h3>Latest station reading — source-driven near-real-time</h3>
       <div class="scale-toggle" id="scale-toggle">
         <button data-scale="design" class="active">สเกลแบบ (+ ม.)</button>
         <button data-scale="msl">ม.รทก.</button>
@@ -157,7 +174,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 
 <div class="grid" style="margin-bottom: 20px;">
   <div class="card col-6">
-    <h3>Cross-Section (แบบเขื่อน + น้ำ live)</h3>
+    <h3>Cross-Section (แบบเขื่อน + ค่าจาก station)</h3>
     <div class="section-drawing">
       <svg class="drawing-svg" id="section-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto"></svg>
       <div class="drawing-notes">
@@ -166,7 +183,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
     </div>
   </div>
   <div class="card col-6">
-    <h3>Recent Range (3 วัน, 10-min telemetry)</h3>
+    <h3>Recent Range (3 วัน, station telemetry)</h3>
     <div class="chart-container small"><canvas id="chart-recent"></canvas></div>
   </div>
 </div>
@@ -186,7 +203,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 
 <div class="grid">
   <div class="card col-12">
-    <h3>Daily Statistics (จาก 10-min data)</h3>
+    <h3>Daily Statistics (จาก station telemetry)</h3>
     <div style="overflow-x:auto">
       <table id="daily-table">
         <thead>
@@ -199,9 +216,9 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 </div>
 
 <div class="footer-note">
-  <strong>Data:</strong> ThaiWater / สสน. — <code>api-v3.thaiwater.net</code> · หน่วยจาก API เป็น <strong>ม.รทก.</strong> · แปลงเป็น<strong>สเกลแบบ</strong>ด้วยสูตร <code>design = msl + offset</code><br>
-  <strong>Offset (นครชัยศรี):</strong> <code>+96.691 ม.</code> จาก BM-02/03/04 ใน PDF ตารางที่ 2 (ยัง unverified — ต้องเทียบกับ staff gauge จริง)<br>
-  <strong>To do ก่อน production:</strong> (1) verify offset กับหมุด BM จริงที่ site 3-5 ครั้ง/วัน 1-2 สัปดาห์ (2) เปลี่ยน <code>designLevels</code> จากแบบมาตรฐานเป็นแบบก่อสร้างจริง (3) ตรวจ BM-01 กับทีมสำรวจว่า typo หรือไม่
+  <strong>Source:</strong> ThaiWater / สสน. → Supabase project <code>samco-logistics</code> → public read-only dashboard · หน่วยต้นทางเป็น <strong>ม.รทก.</strong><br>
+  <strong>Data semantics:</strong> แสดงค่าที่ station ไม่ใช่ sensor ที่หน้างาน · สเกลแบบคำนวณด้วย <code>design = msl + offset</code> เฉพาะ site ที่ datum ใช้ร่วมกันได้<br>
+  <strong>Release:</strong> <code>water-tracker-v3-20260818</code> · Supabase Realtime + fallback refresh · ค่า stale จะถูกเตือน ไม่แสดงเป็น live
 </div>
 
 </div>
@@ -335,7 +352,7 @@ const SITES_FALLBACK = [
     stationDistanceKm: 5.6,
     river: 'แม่น้ำฮี้ (สาขาแม่น้ำสงคราม → โขง)',
     datumOffset: 0.000,
-    datumOffsetLocalDatum: true,
+    datumOffsetLocal: true,
     datumOffsetSource: 'แบบใช้ local datum อ้าง 66-BK04-1 = 100.600 ม. (แบบเดิม ปีงบประมาณ 2567) — ไม่ใช่ MSL สากล',
     datumWarning: '⚠️ CRITICAL: ค่า "สมมุติ" ในแบบเป็น LOCAL DATUM ไม่ใช่ MSL สากล. ThaiWater TKS.121 รายงาน WL ~185 mMSL แต่แบบระบุ WL max +99.8 → offset ที่แท้จริงประมาณ 85-87 m ไม่ใช่ 0. ต้อง cross-check ที่ site ก่อนใช้เชิงตัวเลข. Chart แสดงในสเกล MSL ตามที่ ThaiWater รายงาน — ห้ามใช้เปรียบเทียบกับ design ตรงๆ',
     designLevels: [
@@ -396,24 +413,8 @@ async function loadSitesFromSupabase() {
 
 let SITES = SITES_FALLBACK; // replaced at boot
 
-// ============================================================
-// API HELPERS
-// ============================================================
-const API_BASE = 'https://api-v3.thaiwater.net/api/v1/thaiwater30/public';
-
-async function fetchCurrentAllStations() {
-  const r = await fetch(`${API_BASE}/waterlevel_load`);
-  return (await r.json()).waterlevel_data.data;
-}
-
-async function fetchStationRange(stationId, startDate, endDate) {
-  const url = `${API_BASE}/waterlevel_graph?station_type=tele_waterlevel&station_id=${stationId}&start_date=${startDate}&end_date=${endDate}`;
-  const r = await fetch(url);
-  return (await r.json()).data;
-}
-
-// New: read historical from Supabase readings table (bypasses ThaiWater CORS/hang)
-// For long ranges (>10k rows), use a server-side bucket aggregation via RPC-like query
+// Historical reads come only from the SAMCO LOGISTICS Supabase project.
+// Long ranges use a server-side bucket to stay below the PostgREST row limit.
 async function fetchRangeFromDB(siteId, startISO, endISO) {
   const spanMs = new Date(endISO) - new Date(startISO);
   const spanDays = spanMs / 86400000;
@@ -436,9 +437,9 @@ async function fetchRangeFromDB(siteId, startISO, endISO) {
       .limit(10000));
   }
   if (error) throw error;
-  // Decimate: keep max 500 points per chart for smooth render
+  // Keep timestamps as ISO strings so the browser never guesses the timezone.
   const raw = data.map(r => ({
-    datetime: r.measured_at.replace('T', ' ').substring(0, 16),
+    datetime: r.measured_at,
     value: Number(r.wl_msl),
   }));
   const MAX_POINTS = 500;
@@ -472,7 +473,72 @@ let recentChart = null;
 let historicalChart = null;
 let allStations = null;
 let currentReading = null;
+let latestIngestion = null;
 let rangeCache = {};
+let realtimeChannel = null;
+let loadSequence = 0;
+let realtimeState = 'CONNECTING';
+
+const thaiDateTime = new Intl.DateTimeFormat('th-TH', {
+  timeZone: 'Asia/Bangkok',
+  year: 'numeric', month: '2-digit', day: '2-digit',
+  hour: '2-digit', minute: '2-digit', hour12: false,
+});
+const thaiDateKeyFormat = new Intl.DateTimeFormat('en-CA', {
+  timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit',
+});
+
+function formatThaiDateTime(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : thaiDateTime.format(date);
+}
+
+function thaiDateKey(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '—' : thaiDateKeyFormat.format(date);
+}
+
+function formatAge(minutes) {
+  if (!Number.isFinite(minutes) || minutes < 0) return 'ไม่ทราบอายุข้อมูล';
+  if (minutes < 60) return `${Math.round(minutes)} นาที`;
+  if (minutes < 1440) return `${(minutes / 60).toFixed(1)} ชม.`;
+  return `${(minutes / 1440).toFixed(1)} วัน`;
+}
+
+function median(values) {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2
+    ? sorted[middle]
+    : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+function getFreshness(reading) {
+  if (!reading?.measuredAt) {
+    return { status: 'error', label: 'NO DATA', ageMinutes: null };
+  }
+  const ageMinutes = Math.max(0, (Date.now() - new Date(reading.measuredAt).getTime()) / 60000);
+  const cadence = reading.cadenceMinutes;
+  if (!Number.isFinite(cadence) || cadence <= 0) {
+    return { status: 'delayed', label: 'UNKNOWN', ageMinutes };
+  }
+  if (ageMinutes <= cadence * 2) return { status: 'live', label: 'LIVE', ageMinutes };
+  if (ageMinutes <= cadence * 4) return { status: 'delayed', label: 'DELAYED', ageMinutes };
+  return { status: 'stale', label: 'STALE', ageMinutes };
+}
+
+function renderFreshnessStatus() {
+  const dot = document.getElementById('live-dot');
+  const label = document.getElementById('last-updated');
+  const freshness = getFreshness(currentReading);
+  dot.className = `status-dot ${freshness.status}`;
+  if (!currentReading) {
+    label.textContent = 'NO DATA · ไม่พบข้อมูลจาก station';
+    return;
+  }
+  label.textContent = `${freshness.label} · ${currentSite.stationCode} · ${formatAge(freshness.ageMinutes)} ที่แล้ว`;
+}
 
 // ============================================================
 // DATUM HELPERS
@@ -488,15 +554,33 @@ function renderSitePicker() {
   el.innerHTML = SITES.map(s => `<button data-id="${s.id}" class="${s.id===currentSite.id?'active':''}">${s.name}</button>`).join('');
   el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     currentSite = SITES.find(s => s.id === b.dataset.id);
+    configureScaleToggle();
     renderSitePicker();
     loadSite();
   }));
 }
 
+function configureScaleToggle() {
+  const designButton = document.querySelector('#scale-toggle button[data-scale="design"]');
+  const mslButton = document.querySelector('#scale-toggle button[data-scale="msl"]');
+  designButton.disabled = currentSite.datumOffsetLocal;
+  if (currentSite.datumOffsetLocal) currentScale = 'msl';
+  designButton.classList.toggle('active', currentScale === 'design');
+  mslButton.classList.toggle('active', currentScale === 'msl');
+}
+
 function renderWarningBanner() {
   const s = currentSite;
+  if (s.datumOffsetLocal) {
+    document.getElementById('datum-warning').innerHTML = `
+      <strong>⚠️ Datum incompatible — ปิดการเทียบระดับแบบ</strong><br>
+      <em>ที่มา:</em> ${s.datumOffsetSource}<br>
+      <em>ข้อจำกัด:</em> ${s.datumWarning}
+    `;
+    return;
+  }
   document.getElementById('datum-warning').innerHTML = `
-    <strong>⚠️ Datum conversion — unverified</strong> · ใช้ offset <code>+${s.datumOffset.toFixed(3)}</code> ม. (สเกลแบบ = ม.รทก. + offset)<br>
+    <strong>⚠️ Derived site scale — ไม่ใช่ sensor ที่ site</strong> · ใช้ offset <code>+${s.datumOffset.toFixed(3)}</code> ม. (สเกลแบบ = ม.รทก. + offset)<br>
     <em>ที่มา:</em> ${s.datumOffsetSource}<br>
     <em>ข้อจำกัด:</em> ${s.datumWarning}
   `;
@@ -505,16 +589,17 @@ function renderWarningBanner() {
 function renderSiteInfo() {
   const s = currentSite;
   const st = allStations?.find(x => x.station.id === s.stationId);
-  const bankMsl = st?.station?.min_bank ?? null;
-  const bankDesign = bankMsl !== null ? msl2design(bankMsl) : null;
+  const bankMsl = st?.station?.min_bank ?? (s.stationBankMsl == null ? null : Number(s.stationBankMsl));
+  const bankDesign = bankMsl !== null && !s.datumOffsetLocal ? msl2design(bankMsl) : null;
   document.getElementById('site-info').innerHTML = `
     <dt>Project</dt><dd style="font-family:inherit">${s.projectRef}</dd>
     <dt>Location</dt><dd>${s.lat}, ${s.lng} · <a class="map-link" href="${s.mapsUrl}" target="_blank">แผนที่ →</a></dd>
-    <dt>River / Basin</dt><dd style="font-family:inherit">${s.river} · ลุ่มน้ำท่าจีน</dd>
+    <dt>River</dt><dd style="font-family:inherit">${s.river}</dd>
     <dt>Nearest Station</dt><dd style="font-family:inherit">${s.stationName} (${s.stationCode}) · ห่าง ${s.stationDistanceKm} km</dd>
-    <dt>Datum offset</dt><dd>+${s.datumOffset.toFixed(3)} ม.</dd>
-    <dt>Station Bank</dt><dd>${bankMsl!==null?bankMsl.toFixed(3)+' ม.รทก. → +'+bankDesign.toFixed(3):'—'}</dd>
-    <dt>Station Ground</dt><dd>${st?.station?.ground_level!==undefined?st.station.ground_level+' ม.รทก.':'—'}</dd>
+    <dt>Datum</dt><dd>${s.datumOffsetLocal ? 'local datum — ห้ามแปลง' : `offset +${s.datumOffset.toFixed(3)} ม.`}</dd>
+    <dt>Station Bank</dt><dd>${bankMsl!==null ? `${bankMsl.toFixed(3)} ม.รทก.${bankDesign!==null ? ` → +${bankDesign.toFixed(3)}` : ''}` : '—'}</dd>
+    <dt>Station Ground</dt><dd>${st?.station?.ground_level != null ? st.station.ground_level+' ม.รทก.' : '—'}</dd>
+    <dt>Source received</dt><dd>${currentReading ? formatThaiDateTime(currentReading.fetchedAt) : '—'}</dd>
   `;
 }
 
@@ -525,22 +610,35 @@ function renderKPIs() {
   const s = currentSite;
   const r = currentReading;
   if (!r) {
-    document.getElementById('kpi-row').innerHTML = '<div class="loading">Loading…</div>';
+    document.getElementById('kpi-row').innerHTML = '<div class="error">ไม่พบข้อมูลจาก station</div>';
+    renderFreshnessStatus();
     return;
   }
-  const wlMsl = parseFloat(r.waterlevel_msl);
-  const wlDesign = msl2design(wlMsl);
-  const prev = parseFloat(r.waterlevel_msl_previous);
-  const change = wlMsl - prev;
-
+  const wlMsl = Number(r.wlMsl);
+  const wlDesign = r.wlDesign == null ? null : Number(r.wlDesign);
+  const change = r.previousMsl == null ? null : wlMsl - Number(r.previousMsl);
+  const canCompareDesign = !s.datumOffsetLocal && wlDesign !== null;
   const crest = s.designLevels.find(d => d.kind === 'crest');
-  const highestPile = Math.max(...s.designLevels.filter(d => d.kind === 'pile').map(d => d.value));
-  const distToCrest = crest ? crest.value - wlDesign : null;
-  const distToPileTop = highestPile - wlDesign;
-
-  const isDesign = currentScale === 'design';
+  const pileLevels = s.designLevels.filter(d => d.kind === 'pile').map(d => Number(d.value));
+  const highestPile = pileLevels.length ? Math.max(...pileLevels) : null;
+  const distToCrest = canCompareDesign && crest ? Number(crest.value) - wlDesign : null;
+  const distToPileTop = canCompareDesign && highestPile !== null ? highestPile - wlDesign : null;
+  const isDesign = currentScale === 'design' && canCompareDesign;
   const primaryWl = isDesign ? `+${wlDesign.toFixed(3)}` : wlMsl.toFixed(3);
-  const secondaryWl = isDesign ? `${wlMsl.toFixed(3)} ม.รทก.` : `+${wlDesign.toFixed(3)} สเกลแบบ`;
+  const secondaryWl = s.datumOffsetLocal
+    ? 'ม.รทก. · ห้ามเทียบ local datum'
+    : isDesign
+      ? `${wlMsl.toFixed(3)} ม.รทก.`
+      : `+${wlDesign.toFixed(3)} สเกลแบบ`;
+  const changeText = change === null
+    ? 'ไม่มีข้อมูลก่อนหน้า'
+    : `${change >= 0 ? '+' : ''}${change.toFixed(3)} ม.`;
+  const changeClass = change === null ? '' : (change >= 0 ? 'pos' : 'neg');
+  const distanceClass = (value, warnAt) => value === null
+    ? ''
+    : value > warnAt ? 'pos' : value > 0 ? 'warn' : 'neg';
+  const crestDirection = distToCrest === null ? 'ระยะถึงสันเขื่อน' : distToCrest >= 0 ? 'ต่ำกว่าสันเขื่อน' : 'สูงกว่าสันเขื่อน';
+  const pileDirection = distToPileTop === null ? 'ระยะถึงเสาเข็มตัวบน' : distToPileTop >= 0 ? 'ต่ำกว่าเสาเข็มตัวบน' : 'สูงกว่าเสาเข็มตัวบน';
 
   document.getElementById('kpi-row').innerHTML = `
     <div class="kpi">
@@ -553,28 +651,26 @@ function renderKPIs() {
     <div class="kpi">
       <div class="kpi-label">Change vs Previous</div>
       <div class="dual-value">
-        <span class="primary ${change>=0?'pos':'neg'}">${change>=0?'+':''}${change.toFixed(3)} ม.</span>
-        <span class="secondary">${r.waterlevel_datetime}</span>
+        <span class="primary ${changeClass}">${changeText}</span>
+        <span class="secondary">${r.previousMeasuredAt ? formatThaiDateTime(r.previousMeasuredAt) : 'ไม่มี reading ก่อนหน้า'}</span>
       </div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">ต่ำกว่าสันเขื่อน</div>
+      <div class="kpi-label">${crestDirection}</div>
       <div class="dual-value">
-        <span class="primary ${distToCrest>1?'pos':distToCrest>0?'warn':'neg'}">${distToCrest!==null?distToCrest.toFixed(2)+' ม.':'—'}</span>
-        <span class="secondary">สันเขื่อน = +${crest?crest.value.toFixed(2):'?'}</span>
+        <span class="primary ${distanceClass(distToCrest, 1)}">${distToCrest!==null?Math.abs(distToCrest).toFixed(2)+' ม.':'—'}</span>
+        <span class="secondary">${s.datumOffsetLocal ? 'datum ใช้เทียบกันไม่ได้' : crest ? `สันเขื่อน = +${Number(crest.value).toFixed(2)}` : 'ไม่มีระดับสันเขื่อนใน config'}</span>
       </div>
     </div>
     <div class="kpi">
-      <div class="kpi-label">ต่ำกว่าเสาเข็มตัวบน</div>
+      <div class="kpi-label">${pileDirection}</div>
       <div class="dual-value">
-        <span class="primary ${distToPileTop>0.5?'pos':distToPileTop>0?'warn':'neg'}">${distToPileTop.toFixed(2)} ม.</span>
-        <span class="secondary">pile top = +${highestPile.toFixed(2)}</span>
+        <span class="primary ${distanceClass(distToPileTop, 0.5)}">${distToPileTop!==null?Math.abs(distToPileTop).toFixed(2)+' ม.':'—'}</span>
+        <span class="secondary">${s.datumOffsetLocal ? 'datum ใช้เทียบกันไม่ได้' : highestPile!==null ? `pile top = +${highestPile.toFixed(2)}` : 'ไม่มีระดับ pile ใน config'}</span>
       </div>
     </div>
   `;
-  const rAge = (Date.now() - new Date(r.waterlevel_datetime.replace(' ','T')+':00+07:00').getTime()) / 60000;
-  const ageStr = rAge < 60 ? `${Math.round(rAge)} นาที` : `${(rAge/60).toFixed(1)} ชม.`;
-  document.getElementById('last-updated').textContent = `Live · ${r.waterlevel_datetime} (${ageStr} ที่แล้ว) · ${s.stationCode}`;
+  renderFreshnessStatus();
 }
 
 // ============================================================
@@ -586,7 +682,9 @@ function renderCrossSection() {
   const svg = document.getElementById('section-svg');
   const legend = document.getElementById('section-legend');
 
-  const currentWlDesign = r ? msl2design(parseFloat(r.waterlevel_msl)) : null;
+  const currentWlDesign = r && !s.datumOffsetLocal && r.wlDesign !== null
+    ? Number(r.wlDesign)
+    : null;
   const domainValues = s.designLevels.map(d => d.value).concat(s.referenceWaterLevels.map(d => d.value));
   if (currentWlDesign !== null) domainValues.push(currentWlDesign);
   const minY = Math.min(...domainValues) - 1.5;
@@ -603,7 +701,7 @@ function renderCrossSection() {
     paths += `<line x1="${px}" y1="${yScale(97-i*0.3)}" x2="${px}" y2="${yScale(85)}" stroke="#6b7ba8" stroke-width="1"/>`;
   }
 
-  // LIVE water level (converted to design scale)
+  // Overlay only when station MSL and project design datum are comparable.
   let waterWave = '';
   if (currentWlDesign !== null) {
     const wy = yScale(currentWlDesign);
@@ -632,10 +730,13 @@ function renderCrossSection() {
   const refHtml = s.referenceWaterLevels.map(d =>
     `<li><span>${d.label}</span><span style="color:${d.color}">+${d.value.toFixed(2)}</span></li>`
   ).join('');
-  const liveHtml = r ? `
-    <li class="current"><span>น้ำล่าสุด (สเกลแบบ)</span><span>+${currentWlDesign.toFixed(2)}</span></li>
-    <li><span>น้ำล่าสุด (ม.รทก.)</span><span>${parseFloat(r.waterlevel_msl).toFixed(2)}</span></li>
-  ` : '';
+  const liveHtml = !r ? '' : s.datumOffsetLocal ? `
+    <li class="current"><span>น้ำล่าสุดที่ station</span><span>${Number(r.wlMsl).toFixed(2)} ม.รทก.</span></li>
+    <li><span>เทียบระดับแบบ</span><span>ไม่ได้ — คนละ datum</span></li>
+  ` : `
+    <li class="current"><span>น้ำล่าสุด (derived design)</span><span>+${currentWlDesign.toFixed(2)}</span></li>
+    <li><span>น้ำล่าสุดที่ station</span><span>${Number(r.wlMsl).toFixed(2)} ม.รทก.</span></li>
+  `;
   legend.innerHTML = `
     <li class="header"><span>ระดับเขื่อน (แบบ)</span><span></span></li>
     ${designHtml}
@@ -677,7 +778,12 @@ Chart.register(refLinesPlugin);
 
 function buildRefLines(stationBankMsl) {
   const s = currentSite;
-  const isDesign = currentScale === 'design';
+  const isDesign = currentScale === 'design' && !s.datumOffsetLocal;
+  if (s.datumOffsetLocal) {
+    return stationBankMsl == null
+      ? []
+      : [{ label: 'ตลิ่ง(station)', value: Number(stationBankMsl), color: '#94a3c4' }];
+  }
   const conv = v => isDesign ? v : design2msl(v);
   const refs = [];
   s.designLevels.forEach(d => {
@@ -699,8 +805,8 @@ function attachRefLines(chart, stationBankMsl) {
 }
 
 function chartOpts() {
-  const isDesign = currentScale === 'design';
   const s = currentSite;
+  const isDesign = currentScale === 'design' && !s.datumOffsetLocal;
   return {
     responsive: true,
     maintainAspectRatio: false,
@@ -713,7 +819,7 @@ function chartOpts() {
         ticks: { color: '#94a3c4', font: { size: 10 } }
       },
       y: {
-        title: { display: true, text: isDesign ? 'ระดับน้ำ (สเกลแบบ, +ม.)' : 'ระดับน้ำ (ม.รทก.)', color: '#94a3c4', font: { size: 11 } },
+        title: { display: true, text: isDesign ? 'ระดับน้ำ (derived design scale, +ม.)' : 'ระดับน้ำที่ station (ม.รทก.)', color: '#94a3c4', font: { size: 11 } },
         grid: { color: 'rgba(148,163,196,0.08)' },
         ticks: { color: '#94a3c4', font: { size: 10 } }
       }
@@ -729,6 +835,9 @@ function chartOpts() {
         callbacks: {
           label: (ctx) => {
             const y = ctx.parsed.y;
+            if (s.datumOffsetLocal) {
+              return [`Station: ${y.toFixed(3)} ม.รทก.`, 'ห้ามเทียบกับระดับแบบ local datum'];
+            }
             const design = isDesign ? y : msl2design(y);
             const msl = isDesign ? design2msl(y) : y;
             const crest = s.designLevels.find(d => d.kind === 'crest');
@@ -753,7 +862,7 @@ async function renderRecentChart() {
   const now = new Date();
   const start = new Date(now.getTime() - 3*24*60*60*1000);
   const data = await fetchRangeFromDB(currentSite.id, start.toISOString(), now.toISOString());
-  const isDesign = currentScale === 'design';
+  const isDesign = currentScale === 'design' && !currentSite.datumOffsetLocal;
   const points = data.graph_data.map(p => ({
     x: new Date(p.datetime),
     y: p.value === null ? null : (isDesign ? msl2design(p.value) : p.value)
@@ -791,7 +900,7 @@ async function renderHistoricalChart(days) {
     data = await fetchRangeFromDB(currentSite.id, start.toISOString(), now.toISOString());
     rangeCache[cacheKey] = data;
   }
-  const isDesign = currentScale === 'design';
+  const isDesign = currentScale === 'design' && !currentSite.datumOffsetLocal;
   const points = data.graph_data.map(p => ({
     x: new Date(p.datetime),
     y: p.value === null ? null : (isDesign ? msl2design(p.value) : p.value)
@@ -846,15 +955,17 @@ async function renderHistoricalChart(days) {
 // ============================================================
 function fillDailyTable(points) {
   const s = currentSite;
-  const isDesign = currentScale === 'design';
+  const isDesign = currentScale === 'design' && !s.datumOffsetLocal;
   const conv = v => isDesign ? msl2design(v) : v;
   const crest = s.designLevels.find(d => d.kind === 'crest');
-  const crestVal = crest ? (isDesign ? crest.value : design2msl(crest.value)) : null;
+  const crestVal = s.datumOffsetLocal || !crest
+    ? null
+    : (isDesign ? crest.value : design2msl(crest.value));
 
   const days = {};
   points.forEach(p => {
     if (p.value === null) return;
-    const day = p.datetime.slice(0,10);
+    const day = thaiDateKey(p.datetime);
     if (!days[day]) days[day] = [];
     days[day].push(conv(p.value));
   });
@@ -904,33 +1015,83 @@ document.getElementById('scale-toggle').addEventListener('click', async (e) => {
 // ============================================================
 // LOAD
 // ============================================================
-// Fetch latest reading for one site from Supabase (source-of-truth, cron-fed)
 async function fetchLatestReadingFromDB(siteId) {
   const { data, error } = await sb
     .from('water_tracker_readings')
-    .select('site_id, station_id, measured_at, wl_msl, wl_design')
+    .select('site_id, station_id, measured_at, wl_msl, wl_design, source, fetched_at')
     .eq('site_id', siteId)
     .order('measured_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .limit(20);
   if (error) throw error;
-  if (!data) return null;
-  // Shape it to mimic ThaiWater API's item structure so renderKPIs works unchanged
+  if (!data?.length) return null;
+  const latest = data[0];
+  const previous = data.find(row => row.measured_at !== latest.measured_at) ?? null;
+  const gaps = [];
+  for (let index = 0; index < data.length - 1; index++) {
+    const newer = new Date(data[index].measured_at).getTime();
+    const older = new Date(data[index + 1].measured_at).getTime();
+    const gapMinutes = (newer - older) / 60000;
+    if (Number.isFinite(gapMinutes) && gapMinutes > 0) gaps.push(gapMinutes);
+  }
   return {
-    station: { id: Number(data.station_id), min_bank: null, ground_level: null },
-    waterlevel_msl: String(data.wl_msl),
-    waterlevel_msl_previous: String(data.wl_msl), // no previous in DB yet — set = current so change = 0
-    waterlevel_datetime: data.measured_at.replace('T',' ').substring(0,16),
+    siteId: latest.site_id,
+    stationId: Number(latest.station_id),
+    measuredAt: latest.measured_at,
+    wlMsl: Number(latest.wl_msl),
+    wlDesign: latest.wl_design == null ? null : Number(latest.wl_design),
+    source: latest.source,
+    fetchedAt: latest.fetched_at,
+    previousMsl: previous?.wl_msl == null ? null : Number(previous.wl_msl),
+    previousMeasuredAt: previous?.measured_at ?? null,
+    cadenceMinutes: median(gaps),
   };
 }
 
-async function loadSite() {
-  rangeCache = {};
+async function fetchLatestIngestion() {
+  const { data, error } = await sb
+    .from('water_tracker_ingestion_runs')
+    .select('id, run_type, status, started_at, completed_at, active_sites, processed_readings, alert_count, source_latest_at, error_message')
+    .order('started_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+function renderConnectionStatus() {
+  const el = document.getElementById('connection-status');
+  const realtimeLabel = realtimeState === 'SUBSCRIBED'
+    ? 'Realtime connected'
+    : realtimeState === 'CHANNEL_ERROR' || realtimeState === 'TIMED_OUT'
+      ? 'Realtime degraded — fallback active'
+      : 'Realtime connecting';
+  if (!latestIngestion) {
+    el.textContent = `${realtimeLabel} · ingestion health unavailable`;
+    return;
+  }
+  const runTime = latestIngestion.completed_at || latestIngestion.started_at;
+  const runAge = (Date.now() - new Date(runTime).getTime()) / 60000;
+  el.textContent = `${realtimeLabel} · ingestion ${String(latestIngestion.status).toUpperCase()} · ${formatAge(runAge)} ที่แล้ว`;
+}
+
+async function loadSite({ refreshCharts = true, reason = 'manual' } = {}) {
+  const sequence = ++loadSequence;
+  const siteId = currentSite.id;
+  if (refreshCharts) rangeCache = {};
   try {
     renderWarningBanner();
-    currentReading = await fetchLatestReadingFromDB(currentSite.id);
-    if (!currentReading) throw new Error('No readings for ' + currentSite.id + ' in DB yet');
-    // synthesize allStations minimal entry for renderSiteInfo bankMsl lookup
+    const [reading, ingestion] = await Promise.all([
+      fetchLatestReadingFromDB(siteId),
+      fetchLatestIngestion().catch(error => {
+        console.warn('ingestion health unavailable', error);
+        return null;
+      }),
+    ]);
+    if (sequence !== loadSequence || currentSite.id !== siteId) return;
+    currentReading = reading;
+    latestIngestion = ingestion;
+    if (!currentReading) throw new Error(`No readings for ${siteId} in SAMCO LOGISTICS Supabase`);
+
     allStations = allStations || [];
     if (!allStations.find(x => x.station.id === currentSite.stationId)) {
       allStations.push({
@@ -940,18 +1101,45 @@ async function loadSite() {
     renderSiteInfo();
     renderKPIs();
     renderCrossSection();
-    await renderRecentChart();
-    await renderHistoricalChart(currentDays);
-    // Show last-updated timestamp from DB reading
-    const el = document.getElementById('last-updated');
-    if (el) el.textContent = `Live · ${currentReading.waterlevel_datetime} · ${currentSite.thaiwaterStationCode || currentSite.stationId}`;
+    renderConnectionStatus();
+    if (refreshCharts) {
+      await Promise.all([renderRecentChart(), renderHistoricalChart(currentDays)]);
+    }
+    console.log(`[${reason}]`, siteId, currentReading.measuredAt);
   } catch (e) {
     console.error(e);
     document.getElementById('kpi-row').innerHTML = `<div class="error">Load error: ${e.message}</div>`;
+    document.getElementById('live-dot').className = 'status-dot error';
+    document.getElementById('last-updated').textContent = 'ERROR · โหลดข้อมูลไม่สำเร็จ';
+    renderConnectionStatus();
   }
 }
 
-// Boot: load sites from Supabase, then render
+function subscribeRealtime() {
+  if (realtimeChannel) sb.removeChannel(realtimeChannel);
+  realtimeChannel = sb
+    .channel('samco-water-tracker-live-v3')
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'water_tracker_readings',
+    }, payload => {
+      if (payload.new?.site_id === currentSite.id) {
+        loadSite({ refreshCharts: true, reason: 'realtime' });
+      }
+    })
+    .on('postgres_changes', {
+      event: '*', schema: 'public', table: 'water_tracker_ingestion_runs',
+    }, () => {
+      fetchLatestIngestion().then(run => {
+        latestIngestion = run;
+        renderConnectionStatus();
+      }).catch(console.warn);
+    })
+    .subscribe(status => {
+      realtimeState = status;
+      renderConnectionStatus();
+    });
+}
+
 (async () => {
   try {
     const sites = await loadSitesFromSupabase();
@@ -962,18 +1150,23 @@ async function loadSite() {
   } catch (e) {
     console.warn('Supabase sites load failed, using fallback:', e);
   }
+  configureScaleToggle();
   renderSitePicker();
-  await loadSite();
+  await loadSite({ refreshCharts: true, reason: 'boot' });
+  subscribeRealtime();
 
-  // Auto-refresh KPI + chart data every 60s
-  setInterval(async () => {
-    try {
-      await loadSite();
-      console.log('[auto-refresh]', new Date().toISOString());
-    } catch (e) {
-      console.warn('[auto-refresh] failed:', e.message);
-    }
+  // Age display ticks every minute; the five-minute read is only a fallback.
+  setInterval(() => {
+    renderFreshnessStatus();
+    renderConnectionStatus();
   }, 60_000);
+  setInterval(() => {
+    loadSite({ refreshCharts: true, reason: 'fallback' });
+  }, 5 * 60_000);
+  window.addEventListener('online', () => {
+    subscribeRealtime();
+    loadSite({ refreshCharts: true, reason: 'online' });
+  });
 })();
 </script>
 </body>

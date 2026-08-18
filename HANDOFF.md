@@ -1,93 +1,115 @@
-# SAMCO Water Level Tracker — Codex Handoff
+# SAMCO Water Level Tracker — Operations Handoff
 
-Live URL: https://samco-water-tracker.vercel.app
-GitHub: https://github.com/siravichkitt-spec/water-tracker-samco (auto-deploy to Vercel on push to `master`)
-Owner: siravichkitt@gmail.com
+**Version:** v3
 
-## Purpose
-Real-time water-level monitoring for 5 SAMCO Logistics river-bank protection project sites (all Thai government contracts). Data from ThaiWater API (สสน. — Hydro Informatics Institute) via `api-v3.thaiwater.net`.
+**Verified:** 2026-08-18
 
-## Stack
-- Frontend: Static HTML + Chart.js v4.4.0 + Supabase JS SDK v2 (all via CDN, no build step)
-- Backend: Supabase (Postgres + Edge Functions + pg_cron)
-- Deploy: Vercel (auto-deploy from GitHub `master`)
-- Data source: ThaiWater API v3 (public, no auth)
+**Entity:** SAMCO LOGISTICS — (ก) แพนสั่งได้เอง
 
-## Supabase project
-- Project ID: `yiyoagypmcnatdauuadf`
-- URL: `https://yiyoagypmcnatdauuadf.supabase.co`
-- Publishable anon key (safe for browser): `sb_publishable_QLWNOTvjiait7wY7_v5IpA_P4KstVeh`
-- Service role key: **[ต้องกรอก]** — เก็บใน Supabase Dashboard > Settings > API (ใช้เฉพาะ Edge Function เท่านั้น, ห้ามส่งไป browser)
+**Production:** https://samco-water-tracker.vercel.app
+**GitHub:** https://github.com/siravichkitt-spec/water-tracker-samco
 
-## Tables (schema in `supabase-schema.sql`)
-- `water_tracker_sites` — 5 sites config (station_id, datum_offset, design_levels JSONB, alert thresholds)
-- `water_tracker_readings` — time-series (site_id, station_id, measured_at, wl_msl, wl_design)
-- `water_tracker_alerts` — triggered when wl exceeds threshold (level: warn/crit)
+## Source of truth
+
+The water tracker is stored in the Supabase project named `samco-logistics`, project ref `yiyoagypmcnatdauuadf`, region `ap-northeast-2`. It is separate from the Supabase project named `samakee`.
+
+Data path:
+
+```text
+ThaiWater public API
+  -> protected water-tracker-poll Edge Function
+  -> SAMCO LOGISTICS Supabase Postgres
+  -> RLS public SELECT-only API + Supabase Realtime
+  -> Vercel public dashboard
+```
+
+The upstream source publishes on its own cadence. Realtime means a new database row is pushed to the browser immediately; it does not mean the gauge measures every second.
+
+## Public data contract
+
+| Object | Public access | Server access |
+|---|---|---|
+| `water_tracker_sites` | SELECT active sites | full via service role |
+| `water_tracker_readings` | SELECT | full via service role |
+| `water_tracker_alerts` | SELECT | full via service role |
+| `water_tracker_ingestion_runs` | SELECT operational health | full via service role |
+| `water_tracker_bucket(...)` | EXECUTE for chart reads | EXECUTE |
+| `water_tracker_verify_cron_secret(...)` | none | EXECUTE by service role only |
+
+RLS is enabled on all four exposed tables. The public roles have no INSERT, UPDATE, DELETE, TRUNCATE, TRIGGER, or REFERENCES grant.
 
 ## Edge Functions
-- `water-tracker-poll` — fetches ThaiWater `/waterlevel_load` (all 1400+ stations), filters to 5 sites, upserts readings, checks alert thresholds. Called by pg_cron every 15 min.
-- `water-tracker-backfill` — accepts `?days=N&site=<id>`, fetches ThaiWater `/waterlevel_graph` history (chunked, up to 365 days), upserts in batches of 1000.
 
-## pg_cron
-Job `water-tracker-poll-15min`: `*/15 * * * *` → calls `water-tracker-poll` via `net.http_get` with `x-samco-cron-secret` header (secret in `vault.decrypted_secrets`).
+### `water-tracker-poll`
 
-## RPC functions
-- `water_tracker_bucket(p_site text, p_start timestamptz, p_end timestamptz, p_bucket_mins int)` — server-side time-bucket aggregation. Used by frontend `fetchRangeFromDB()` when span > 45 days to bypass PostgREST 1000-row cap. Returns bucketed avg wl_msl/wl_design.
+- Called by `pg_cron` every 15 minutes.
+- Requires `x-samco-cron-secret`; the secret is read by the scheduler from Supabase Vault.
+- Fetches ThaiWater once, filters configured stations, validates values/timestamps, and upserts idempotently.
+- Creates at most one severity per reading and logs ingestion health.
 
-## Sites (5)
-| Site ID | Name | Station ID | Station Code | Offset | Update Frequency |
-|---|---|---|---|---|---|
-| thachin-nakhonchaisi | นครชัยศรี (ท่าจีน) | 748 | THA008 | +96.691 | 15-30 min |
-| khoksalut-nan | โคกสลุด (น่าน) | 667 | NAN006 | +59.777 | 15-30 min |
-| angthong-bangkaew | อ่างทอง (คลองบางแก้ว) | 2626 | C.7A | +91.421 | hourly |
-| prachinburi | ปราจีนบุรี | 2680 | Kgt.3 | +91.000 | hourly |
-| buengkan-nam-hi | บึงกาฬ (แม่น้ำฮี้) | 11688687 | TKS.121 | 0 (local datum) | hourly, no historical |
+### `water-tracker-backfill`
 
-## Frontend architecture (`index.html`)
-Single-file app (~980 lines). Key functions:
-- `loadSitesFromSupabase()` — reads `water_tracker_sites` table on boot
-- `dbRowToSite()` — maps snake_case DB row → camelCase UI object (⚠️ `Number(row.station_id)` because Postgres bigint returns as string in JS SDK)
-- `fetchLatestReadingFromDB(siteId)` — reads latest row from `water_tracker_readings`
-- `fetchRangeFromDB(siteId, startISO, endISO)` — reads range; uses RPC `water_tracker_bucket` for spans > 45 days
-- `renderKPIs()` — 4 cards: current WL, change, distance to crest, distance to pile top
-- `renderCrossSection()` — SVG cross-section with live water line + design levels
-- `renderRecentChart()` — 3-day chart (raw rows)
-- `renderHistoricalChart(days)` — dynamic x-axis unit (hour/day/week/month), server-side bucket for >180d
-- Auto-refresh: `setInterval(loadSite, 60_000)` — every 60s
+- Maintenance only; `POST` plus the same scheduler secret.
+- `days` must be an integer from 1 through 365.
+- Optional `site=<site_id>` restricts the maintenance run.
+- A publishable key is never sufficient to invoke it.
 
-## Known issues / limitations
-1. **Buengkan (station 11688687)** — ThaiWater `/waterlevel_graph` returns null historical data. Only accumulates via cron (1 hourly reading per hour). Cannot backfill.
-2. **Datum offsets** — 4/5 sites verified against BM markers; angthong/prachinburi need site-visit verification. Buengkan uses local datum (not MSL) — chart shows ThaiWater's MSL scale directly, ห้าม compare กับ design levels ตรงๆ.
-3. **CORS**: ThaiWater API allows cross-origin requests, but historical (`/waterlevel_graph`) sometimes hangs from browser. Frontend reads from Supabase DB instead (populated by cron + backfill).
-4. **PostgREST 1000-row cap** — cannot return >1000 rows even with `.limit(10000)`. Long-range queries MUST use RPC bucket function.
+To invoke a backfill without copying the secret out of Vault, run this inside the Supabase SQL editor and change only the non-secret query parameters:
 
-## Backfill runbook (already done: 365 days for 4 sites, 119,360 rows)
-```bash
-# Manually backfill one site (Edge Function has 60s timeout, chunks internally):
-curl -X POST "https://yiyoagypmcnatdauuadf.supabase.co/functions/v1/water-tracker-backfill?days=365&site=thachin-nakhonchaisi" \
-  -H "Authorization: Bearer sb_publishable_QLWNOTvjiait7wY7_v5IpA_P4KstVeh"
+```sql
+select net.http_post(
+  url := 'https://yiyoagypmcnatdauuadf.supabase.co/functions/v1/water-tracker-backfill?days=30&site=thachin-nakhonchaisi',
+  headers := jsonb_build_object(
+    'x-samco-cron-secret', (
+      select decrypted_secret
+      from vault.decrypted_secrets
+      where name = 'water_tracker_cron_secret'
+      limit 1
+    ),
+    'Content-Type', 'application/json'
+  ),
+  body := '{}'::jsonb,
+  timeout_milliseconds := 60000
+);
 ```
 
-## Deploy workflow
-```bash
-git add -A && git commit -m "..." && git push
-# → Vercel auto-deploys to https://samco-water-tracker.vercel.app in ~90s
-```
+## Dashboard semantics
 
-## Suggested next tasks for Codex
-1. **Alert UI** — display recent `water_tracker_alerts` rows on dashboard (table exists but no UI).
-2. **Multi-site overview page** — grid card view showing all 5 sites current WL + status color (green/warn/crit).
-3. **Email/LINE notifications** — trigger from Edge Function when new alert row inserted.
-4. **Historical comparison** — overlay y-o-y trace (this year vs last year on same chart).
-5. **Site admin CRUD** — edit `water_tracker_sites` from UI (currently must edit via SQL).
-6. **Verify auto-refresh** — after Vercel picks up latest commit `2c62900`, confirm green pulse dot + "(X นาที ที่แล้ว)" age counter in header.
+- `LIVE`, `DELAYED`, and `STALE` derive from the median interval of recent readings at that station.
+- Change is calculated from the previous stored reading. If none exists, the UI says there is no prior reading; it never substitutes zero.
+- The page shows the source timestamp, database receipt time, station identity, and ingestion health.
+- Buengkan uses a local project datum that is incompatible with ThaiWater MSL. Design conversion, distance-to-crest, distance-to-pile, reference overlays, and related alerts must remain disabled until field calibration supplies an approved conversion.
+- Every site uses a nearby/proxy gauge unless a field sensor is explicitly installed. The UI must never relabel a station measurement as an on-site measurement.
 
-## Testing
-No test framework installed. Manual QA via `browser_task` / Playwright screenshots.
+## Verification checklist
 
-## Iron rules (from user, ห้ามละเมิด)
-1. ห้ามเดาตัวเลข — ใช้ `[ต้องกรอก]` เมื่อไม่มีข้อมูล
-2. Verify ตัวเลขซ้ำ — ผลรวมไม่ตรง = หยุดและแจ้ง
-3. ตัวเลขระบุ SAMCO LOGISTICS vs สามัคคี (โครงการทั้ง 5 site เป็นของ SAMCO LOGISTICS)
-4. ASCII filenames only
-5. Deliverable: .md / .xlsx live formula / .docx+.pdf
+1. Confirm the Supabase project name is `samco-logistics` and ref is `yiyoagypmcnatdauuadf`.
+2. Confirm all public water tracker tables have RLS enabled and public roles have SELECT only.
+3. Call both Edge Function URLs without the scheduler secret; expect `401` for the allowed HTTP method.
+4. Confirm `water_tracker_readings` and `water_tracker_ingestion_runs` are in the `supabase_realtime` publication.
+5. Compare the latest timestamp and `wl_msl` for all configured stations against ThaiWater.
+6. Confirm `water_tracker_ingestion_runs` reports a recent successful poll.
+7. Open production, switch all sites, switch MSL/design scale, and verify Buengkan cannot select design scale.
+8. Confirm no browser console error and no service-role/cron secret in HTML, Git, or logs.
+
+## Release workflow
+
+1. Run syntax and security checks locally.
+2. Apply the tracked Supabase migration.
+3. Deploy both Edge Functions with custom secret authentication (`verify_jwt=false` because the handler validates the scheduler secret).
+4. Verify unauthorized calls and trigger one authorized poll from the database scheduler path.
+5. Deploy a Vercel preview and complete browser QA.
+6. Push the verified commit to `master`; the connected Vercel project auto-deploys production.
+7. Compare production content with GitHub and perform the verification checklist again.
+
+## Incident order
+
+1. Check `water_tracker_ingestion_runs` for the last status and error.
+2. Check Supabase Edge Function logs for `water-tracker-poll`.
+3. Compare one station directly with ThaiWater.
+4. Check `cron.job` and recent `cron.job_run_details`.
+5. If upstream is stale, leave the last valid reading intact and keep the dashboard marked `STALE`; never insert a made-up replacement.
+
+## Credential rule
+
+Never place a service-role key, scheduler secret, Vercel token, or GitHub token in this file, source code, browser code, issue, commit, or chat output.

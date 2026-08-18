@@ -2,3 +2,7 @@
 .env.local
 node_modules
 *.log
+.playwright-cli/
+artifact_work/
+output/
+outputs/**/*.inspect.ndjson

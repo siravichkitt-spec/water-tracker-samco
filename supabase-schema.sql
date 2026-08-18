@@ -1,6 +1,6 @@
 -- SAMCO Water Level Tracker — Supabase schema
 -- Project: yiyoagypmcnatdauuadf
--- Generated 2026-08-18
+-- Verified against Supabase project samco-logistics on 2026-08-18
 
 -- ============================================================
 -- TABLE: water_tracker_sites
@@ -71,6 +71,27 @@ CREATE TABLE public.water_tracker_alerts (
   acknowledged_by   text
 );
 
+CREATE UNIQUE INDEX uq_water_tracker_alert_reading_level
+  ON public.water_tracker_alerts (reading_id, level);
+
+-- ============================================================
+-- TABLE: water_tracker_ingestion_runs
+-- Operational health only; credentials are never stored here.
+-- ============================================================
+CREATE TABLE public.water_tracker_ingestion_runs (
+  id                    bigserial PRIMARY KEY,
+  run_type              text NOT NULL CHECK (run_type IN ('poll', 'backfill')),
+  status                text NOT NULL CHECK (status IN ('running', 'success', 'partial', 'failed')),
+  started_at            timestamptz NOT NULL DEFAULT now(),
+  completed_at          timestamptz,
+  active_sites          integer CHECK (active_sites IS NULL OR active_sites >= 0),
+  processed_readings    integer CHECK (processed_readings IS NULL OR processed_readings >= 0),
+  alert_count           integer CHECK (alert_count IS NULL OR alert_count >= 0),
+  skipped               jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(skipped) = 'array'),
+  source_latest_at      timestamptz,
+  error_message         text
+);
+
 -- ============================================================
 -- RPC: water_tracker_bucket
 -- Server-side time-bucket aggregation for long-range charts.
@@ -100,12 +121,30 @@ GRANT EXECUTE ON FUNCTION water_tracker_bucket(text, timestamptz, timestamptz, i
   TO anon, authenticated;
 
 -- ============================================================
--- RLS (currently DISABLED — anon can read all tables via publishable key)
--- If enabling RLS later:
---   ALTER TABLE water_tracker_sites ENABLE ROW LEVEL SECURITY;
---   CREATE POLICY "public read sites" ON water_tracker_sites FOR SELECT USING (true);
---   (repeat for readings + alerts)
+-- RLS: PUBLIC READ-ONLY
+-- anon/authenticated receive SELECT only. Edge Functions write as service_role.
 -- ============================================================
+ALTER TABLE public.water_tracker_sites ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.water_tracker_readings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.water_tracker_alerts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.water_tracker_ingestion_runs ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "public read sites" ON public.water_tracker_sites
+  FOR SELECT TO anon, authenticated USING (is_active = true);
+CREATE POLICY "public read readings" ON public.water_tracker_readings
+  FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "public read alerts" ON public.water_tracker_alerts
+  FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "public read ingestion health" ON public.water_tracker_ingestion_runs
+  FOR SELECT TO anon, authenticated USING (true);
+
+GRANT SELECT ON public.water_tracker_sites TO anon, authenticated;
+GRANT SELECT ON public.water_tracker_readings TO anon, authenticated;
+GRANT SELECT ON public.water_tracker_alerts TO anon, authenticated;
+GRANT SELECT ON public.water_tracker_ingestion_runs TO anon, authenticated;
+
+-- Realtime publication includes sites, readings, alerts, and ingestion health.
+-- The idempotent publication logic lives in the tracked migration file.
 
 -- ============================================================
 -- pg_cron job (schedule in cron.job table)
