@@ -97,4 +97,3 @@ Final production browser checks:
 ## 6. QA decision
 
 **PASS — ready for SAMCO LOGISTICS public read-only use.**
-

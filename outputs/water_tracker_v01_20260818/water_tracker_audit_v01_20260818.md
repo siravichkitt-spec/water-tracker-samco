@@ -102,4 +102,3 @@ There are two Vercel project integrations connected to the same repository. The 
 **READY** for public read-only operational use.
 
 This is not a guarantee of 100% upstream availability. The first external fail mode is ThaiWater delay/outage; the system handles it by retaining the last verified reading and changing the freshness state instead of pretending stale data is live.
-
