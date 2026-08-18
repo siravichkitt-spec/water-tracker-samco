@@ -1,0 +1,322 @@
+[
+  {
+    "id": "thachin-nakhonchaisi",
+    "name": "นครชัยศรี (ท่าจีน)",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่ง — กรมโยธาฯ (67-NPT-S04)",
+    "lat": 13.879389,
+    "lng": 100.219611,
+    "maps_url": "https://maps.app.goo.gl/LexisKULLpUFXxbHA",
+    "river": "แม่น้ำท่าจีน",
+    "length_m": null,
+    "station_id": 748,
+    "station_code": "THA008",
+    "station_name": "สะพานนครชัยศรี",
+    "station_distance_km": 10.0,
+    "station_bank_msl": null,
+    "station_note": "THA008 สะพานนครชัยศรี ห่าง 10 km — tidal river, lag ±0.1-0.3 m",
+    "datum_offset": 96.691,
+    "datum_offset_source": "BM-02/03/04 จากตารางที่ 2 โครงการ 67-NPT-S04",
+    "datum_warning": "BM-01 ในตารางให้ offset 96.891 (ต่างจากอีก 3 หมุด 200mm) — น่าจะ typo. Tidal lag จาก station THA008 (ห่าง 10 km) อาจ ±0.1-0.3 ม.",
+    "datum_offset_local": false,
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 100.0
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินทิ้ง",
+        "value": 98.0
+      },
+      {
+        "kind": "pile",
+        "color": "#a78bfa",
+        "label": "เสาเข็มเสริมกำลังดิน +97",
+        "value": 97.0
+      },
+      {
+        "kind": "pile",
+        "color": "#a78bfa",
+        "label": "เสาเข็มเสริมกำลังดิน +96",
+        "value": 96.0
+      },
+      {
+        "kind": "pile",
+        "color": "#a78bfa",
+        "label": "เสาเข็มเสริมกำลังดิน +95",
+        "value": 95.0
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 99.5
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำเฉลี่ยสำรวจ",
+        "value": 97.9
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 96.6
+      }
+    ],
+    "alert_warn_design_level": 98.0,
+    "alert_crit_design_level": 100.0,
+    "sort_order": 1,
+    "is_active": true,
+    "created_at": "2026-08-08T02:43:43.252121+00:00",
+    "updated_at": "2026-08-08T02:43:43.252121+00:00"
+  },
+  {
+    "id": "khoksalut-nan",
+    "name": "โคกสลุด (น่าน)",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำน่าน หมู่ 5 — กรมโยธาฯ",
+    "lat": 16.575737,
+    "lng": 100.243984,
+    "maps_url": "https://maps.google.com/?q=16.575737,100.243984",
+    "river": "แม่น้ำน่าน",
+    "length_m": null,
+    "station_id": 667,
+    "station_code": "NAN006",
+    "station_name": "บางกระทุ่ม (แม่น้ำน่าน)",
+    "station_distance_km": 0.78,
+    "station_bank_msl": 39.86,
+    "station_note": "NAN006 บางกระทุ่ม ห่างเพียง 0.78 km — quality สูงสุดใน 5 sites",
+    "datum_offset": 59.777,
+    "datum_offset_source": "BM-1/BM-2/BM-3 + GPS-NAN2-V06-1/V06-2 — 5 หมุด offset 59.7770 ตรงกัน spread 0mm",
+    "datum_warning": "Offset สะอาดที่สุด 5/5 หมุด verified. Sanity check MSL max design +99.780 = MSL +40.003 vs NAN006 bank +39.86 → ต่าง 14 cm. Excellent quality",
+    "datum_offset_local": false,
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 100.5
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินทิ้ง",
+        "value": 98.0
+      },
+      {
+        "kind": "pile",
+        "color": "#a78bfa",
+        "label": "หัวเสาเข็มเสริมกำลังดิน",
+        "value": 92.5
+      },
+      {
+        "kind": "riprap",
+        "color": "#94a3c4",
+        "label": "ระดับหินเรียง",
+        "value": 91.5
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 99.78
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำเฉลี่ยสำรวจ",
+        "value": 90.583
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 88.8
+      }
+    ],
+    "alert_warn_design_level": 98.0,
+    "alert_crit_design_level": 100.5,
+    "sort_order": 2,
+    "is_active": true,
+    "created_at": "2026-08-08T02:43:43.252121+00:00",
+    "updated_at": "2026-08-08T02:43:43.252121+00:00"
+  },
+  {
+    "id": "angthong-bangkaew",
+    "name": "อ่างทอง (คลองบางแก้ว)",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่งริมคลองบางแก้ว หมู่ 8 ต.บ้านอิฐ อ.เมือง จ.อ่างทอง (D680P08)",
+    "lat": 14.598244,
+    "lng": 100.47757,
+    "maps_url": "https://www.google.com/maps?q=14.598244,100.477570",
+    "river": "คลองบางแก้ว (สาขาแม่น้ำเจ้าพระยา)",
+    "length_m": 379,
+    "station_id": 2626,
+    "station_code": "C.7A",
+    "station_name": "บ้านบางแก้ว (แม่น้ำเจ้าพระยา)",
+    "station_distance_km": 2.73,
+    "station_bank_msl": 9.9,
+    "station_note": "C.7A บ้านบางแก้ว บนเจ้าพระยาหลัก 2.73 km — site บนสาขา ระดับต่ำกว่า ~5-6 m",
+    "datum_offset": 91.421,
+    "datum_offset_source": "GPS01 (สมมุติ 101.634 / MSL 10.213) + GPS02 (สมมุติ 100.000 / MSL 8.579) → offset 91.421 spot-on",
+    "datum_warning": "C.7A บ้านบางแก้ว บนแม่น้ำเจ้าพระยาหลัก แต่ site อยู่บนคลองบางแก้ว (สาขา) — ระดับน้ำจริงที่ site จะต่ำกว่า C.7A ประมาณ 5-6 m",
+    "datum_offset_local": false,
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 96.5
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินเรียง",
+        "value": 95.5
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำท่วมเฉลี่ย (2554)",
+        "value": 95.424
+      },
+      {
+        "color": "#f97316",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 94.958
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำขณะสำรวจ (24-09-2567)",
+        "value": 93.869
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 90.711
+      }
+    ],
+    "alert_warn_design_level": 95.0,
+    "alert_crit_design_level": 96.5,
+    "sort_order": 3,
+    "is_active": true,
+    "created_at": "2026-08-08T02:43:43.252121+00:00",
+    "updated_at": "2026-08-08T02:43:43.252121+00:00"
+  },
+  {
+    "id": "prachinburi",
+    "name": "ปราจีนบุรี",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำปราจีนบุรี ต.ศาลาลำดวน อ.เมือง จ.ปราจีนบุรี (68-PRJ-S7-01)",
+    "lat": 13.966917,
+    "lng": 101.613333,
+    "maps_url": "https://www.google.com/maps?q=13.966917,101.613333",
+    "river": "แม่น้ำปราจีนบุรี",
+    "length_m": null,
+    "station_id": 2680,
+    "station_code": "Kgt.3",
+    "station_name": "สะพานต้นน้ำบางปะกง (กบินทร์บุรี)",
+    "station_distance_km": 10.17,
+    "station_bank_msl": 8.79,
+    "station_note": "Kgt.3 กบินทร์บุรี 10 km เหนือ site. Sanity: WL max design +99.515 = MSL +8.515 vs Kgt.3 bank +8.79 — ต่าง 27cm",
+    "datum_offset": 91.0,
+    "datum_offset_source": "9/10 หมุด BM offset ตรงกัน 91.000 spot-on + 2/3 WL อ้างอิงตรง",
+    "datum_warning": "BM04 outlier offset 91.133 (ต่าง 133mm) — น่าจะ typo. Sanity check: WL max design +99.515 = MSL +8.515 vs Kgt.3 bank +8.79 — ต่าง 27cm แม่นมาก",
+    "datum_offset_local": false,
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 100.0
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินเรียง",
+        "value": 97.5
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 99.515
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำเฉลี่ยสำรวจ (พ.ย. 2568)",
+        "value": 94.29
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 92.174
+      }
+    ],
+    "alert_warn_design_level": 97.5,
+    "alert_crit_design_level": 100.0,
+    "sort_order": 4,
+    "is_active": true,
+    "created_at": "2026-08-08T02:43:43.252121+00:00",
+    "updated_at": "2026-08-08T02:43:43.252121+00:00"
+  },
+  {
+    "id": "buengkan-nam-hi",
+    "name": "บึงกาฬ (แม่น้ำฮี้)",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำฮี้ หมู่ 9 ต.ป่งไฮ อ.เซกา จ.บึงกาฬ (D670257)",
+    "lat": 18.011223,
+    "lng": 103.872809,
+    "maps_url": "https://www.google.com/maps?q=18.011223,103.872809",
+    "river": "แม่น้ำฮี้ (สาขาแม่น้ำสงคราม → โขง)",
+    "length_m": 1205,
+    "station_id": 11688687,
+    "station_code": "TKS.121",
+    "station_name": "บ้านป่งไฮ (RID hydro)",
+    "station_distance_km": 5.6,
+    "station_bank_msl": null,
+    "station_note": "TKS.121 บ้านป่งไฮ ต.ป่งไฮ อ.เซกา — ตำบลเดียวกับ site 5.6 km. WL ~185 mMSL. Critical 187",
+    "datum_offset": 0.0,
+    "datum_offset_source": "แบบใช้ local datum อ้าง 66-BK04-1 = 100.600 ม. (แบบเดิม ปีงบประมาณ 2567) — ไม่ใช่ MSL สากล",
+    "datum_warning": "⚠️ CRITICAL: ค่า สมมุติ ในแบบเป็น LOCAL DATUM ไม่ใช่ MSL สากล. offset ที่แท้จริงประมาณ 85-87 m ไม่ใช่ 0. ต้อง cross-check ที่ site",
+    "datum_offset_local": true,
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 100.5
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินทิ้ง",
+        "value": 98.5
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 99.8
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำขณะสำรวจ",
+        "value": 95.6
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 93.8
+      }
+    ],
+    "alert_warn_design_level": null,
+    "alert_crit_design_level": 187.0,
+    "sort_order": 5,
+    "is_active": true,
+    "created_at": "2026-08-08T02:43:43.252121+00:00",
+    "updated_at": "2026-08-08T02:43:43.252121+00:00"
+  }
+]
