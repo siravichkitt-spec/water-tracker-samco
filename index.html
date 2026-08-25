@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="samco-release" content="water-tracker-v3-20260818">
+<meta name="samco-release" content="water-tracker-v3.1-20260825">
 <title>Water Level Tracker — SAMCO</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%233ec6ff'/%3E%3Cpath d='M32 12C24 24 18 31 18 40a14 14 0 0 0 28 0c0-9-6-16-14-28Z' fill='%230b1220'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -103,6 +103,8 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 
 .loading { text-align: center; padding: 40px; color: var(--text-dim); font-size: 13px; }
 .error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fecaca; padding: 12px; border-radius: 8px; font-size: 13px; }
+.range-note { display: none; margin: 0 0 12px; padding: 9px 12px; border: 1px solid rgba(251,191,36,0.45); border-radius: 7px; background: rgba(251,191,36,0.08); color: #fde68a; font-size: 12px; line-height: 1.55; }
+.range-note.visible { display: block; }
 
 .map-link { color: var(--accent); text-decoration: none; font-size: 12px; font-family: 'JetBrains Mono', monospace; }
 .map-link:hover { text-decoration: underline; }
@@ -183,7 +185,8 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
     </div>
   </div>
   <div class="card col-6">
-    <h3>Recent Range (3 วัน, station telemetry)</h3>
+    <h3 id="recent-range-title">Recent Range (3 วัน, station telemetry)</h3>
+    <div class="range-note" id="recent-range-note"></div>
     <div class="chart-container small"><canvas id="chart-recent"></canvas></div>
   </div>
 </div>
@@ -197,13 +200,14 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
       <button data-days="90">90 วัน</button>
       <button data-days="365">1 ปี</button>
     </div>
+    <div class="range-note" id="historical-range-note"></div>
     <div class="chart-container"><canvas id="chart-historical"></canvas></div>
   </div>
 </div>
 
 <div class="grid">
   <div class="card col-12">
-    <h3>Daily Statistics (จาก station telemetry)</h3>
+    <h3 id="daily-statistics-title">Daily Statistics (จาก station telemetry)</h3>
     <div style="overflow-x:auto">
       <table id="daily-table">
         <thead>
@@ -218,7 +222,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 <div class="footer-note">
   <strong>Source:</strong> ThaiWater / สสน. → Supabase project <code>samco-logistics</code> → public read-only dashboard · หน่วยต้นทางเป็น <strong>ม.รทก.</strong><br>
   <strong>Data semantics:</strong> แสดงค่าที่ station ไม่ใช่ sensor ที่หน้างาน · สเกลแบบคำนวณด้วย <code>design = msl + offset</code> เฉพาะ site ที่ datum ใช้ร่วมกันได้<br>
-  <strong>Release:</strong> <code>water-tracker-v3-20260818</code> · Supabase Realtime + fallback refresh · ค่า stale จะถูกเตือน ไม่แสดงเป็น live
+  <strong>Release:</strong> <code>water-tracker-v3.1-20260825</code> · Supabase Realtime + fallback refresh · ช่วงปัจจุบันว่างจะแสดงช่วงข้อมูลจริงล่าสุดพร้อมป้าย STALE
 </div>
 
 </div>
@@ -418,25 +422,58 @@ let SITES = SITES_FALLBACK; // replaced at boot
 async function fetchRangeFromDB(siteId, startISO, endISO) {
   const spanMs = new Date(endISO) - new Date(startISO);
   const spanDays = spanMs / 86400000;
-  // For 1yr+ we bucket to hourly avg server-side via RPC. Otherwise raw rows.
-  let data, error;
-  if (spanDays > 45) {
-    // Server-side bucket to keep result small AND cover full range
-    ({ data, error } = await sb.rpc('water_tracker_bucket', {
-      p_site: siteId, p_start: startISO, p_end: endISO,
-      p_bucket_mins: spanDays > 180 ? 720 : 60  // 12h buckets for >180d (~730 rows/yr), else hourly
-    }));
-  } else {
-    ({ data, error } = await sb
+  if (!Number.isFinite(spanMs) || spanMs <= 0) throw new Error('Invalid historical range');
+
+  const queryRange = async (rangeStart, rangeEnd) => {
+    // For long ranges, bucket server-side to stay below the PostgREST row limit.
+    if (spanDays > 45) {
+      const result = await sb.rpc('water_tracker_bucket', {
+        p_site: siteId, p_start: rangeStart, p_end: rangeEnd,
+        p_bucket_mins: spanDays > 180 ? 720 : 60
+      });
+      if (result.error) throw result.error;
+      return result.data || [];
+    }
+    const result = await sb
       .from('water_tracker_readings')
       .select('measured_at, wl_msl, wl_design')
       .eq('site_id', siteId)
-      .gte('measured_at', startISO)
-      .lte('measured_at', endISO)
+      .gte('measured_at', rangeStart)
+      .lte('measured_at', rangeEnd)
       .order('measured_at', { ascending: true })
-      .limit(10000));
+      .limit(10000);
+    if (result.error) throw result.error;
+    return result.data || [];
+  };
+
+  let effectiveStart = startISO;
+  let effectiveEnd = endISO;
+  let fallbackToLatest = false;
+  let data = await queryRange(effectiveStart, effectiveEnd);
+
+  // If an upstream station has stopped publishing, show the last real period
+  // instead of an unexplained blank chart. Never invent or forward-fill values.
+  if (data.length === 0) {
+    let latestAt = currentReading?.siteId === siteId ? currentReading.measuredAt : null;
+    if (!latestAt) {
+      const latestResult = await sb
+        .from('water_tracker_readings')
+        .select('measured_at')
+        .eq('site_id', siteId)
+        .order('measured_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (latestResult.error) throw latestResult.error;
+      latestAt = latestResult.data?.measured_at || null;
+    }
+    if (latestAt && new Date(latestAt).getTime() < new Date(startISO).getTime()) {
+      effectiveEnd = latestAt;
+      effectiveStart = new Date(new Date(latestAt).getTime() - spanMs).toISOString();
+      data = await queryRange(effectiveStart, effectiveEnd);
+      fallbackToLatest = data.length > 0;
+    }
   }
-  if (error) throw error;
+
   // Keep timestamps as ISO strings so the browser never guesses the timezone.
   const raw = data.map(r => ({
     datetime: r.measured_at,
@@ -450,7 +487,15 @@ async function fetchRangeFromDB(siteId, startISO, endISO) {
     // always include last point
     if (decimated[decimated.length - 1] !== raw[raw.length - 1]) decimated.push(raw[raw.length - 1]);
   }
-  return { graph_data: decimated, min_bank: null };
+  return {
+    graph_data: decimated,
+    min_bank: null,
+    fallback_to_latest: fallbackToLatest,
+    requested_start: startISO,
+    requested_end: endISO,
+    effective_start: effectiveStart,
+    effective_end: effectiveEnd,
+  };
 }
 
 function fmtDate(d) {
@@ -862,6 +907,18 @@ async function renderRecentChart() {
   const now = new Date();
   const start = new Date(now.getTime() - 3*24*60*60*1000);
   const data = await fetchRangeFromDB(currentSite.id, start.toISOString(), now.toISOString());
+  const title = document.getElementById('recent-range-title');
+  const note = document.getElementById('recent-range-note');
+  title.textContent = data.fallback_to_latest
+    ? 'Recent Range (ช่วงข้อมูลจริงล่าสุด 3 วัน)'
+    : 'Recent Range (3 วัน, station telemetry)';
+  if (data.fallback_to_latest) {
+    note.textContent = `ไม่มีข้อมูลใน 3 วันล่าสุด · แสดงข้อมูลจริงช่วง ${formatThaiDateTime(data.effective_start)} ถึง ${formatThaiDateTime(data.effective_end)} · ไม่มีการเติมค่าหรือสร้างข้อมูลจำลอง`;
+    note.classList.add('visible');
+  } else {
+    note.textContent = '';
+    note.classList.remove('visible');
+  }
   const isDesign = currentScale === 'design' && !currentSite.datumOffsetLocal;
   const points = data.graph_data.map(p => ({
     x: new Date(p.datetime),
@@ -893,12 +950,22 @@ async function renderRecentChart() {
 async function renderHistoricalChart(days) {
   const now = new Date();
   const start = new Date(now.getTime() - days*24*60*60*1000);
-  window._histBounds = { start, end: now };
   const cacheKey = `${currentSite.id}-${days}`;
   let data = rangeCache[cacheKey];
   if (!data) {
     data = await fetchRangeFromDB(currentSite.id, start.toISOString(), now.toISOString());
     rangeCache[cacheKey] = data;
+  }
+  const effectiveStart = new Date(data.effective_start || start);
+  const effectiveEnd = new Date(data.effective_end || now);
+  window._histBounds = { start: effectiveStart, end: effectiveEnd };
+  const rangeNote = document.getElementById('historical-range-note');
+  if (data.fallback_to_latest) {
+    rangeNote.textContent = `ช่วง ${days} วันล่าสุดไม่มีข้อมูล · กราฟและตารางด้านล่างแสดงช่วงข้อมูลจริงล่าสุด ${formatThaiDateTime(data.effective_start)} ถึง ${formatThaiDateTime(data.effective_end)} · สถานะยังเป็น STALE`;
+    rangeNote.classList.add('visible');
+  } else {
+    rangeNote.textContent = '';
+    rangeNote.classList.remove('visible');
   }
   const isDesign = currentScale === 'design' && !currentSite.datumOffsetLocal;
   const points = data.graph_data.map(p => ({
@@ -947,13 +1014,13 @@ async function renderHistoricalChart(days) {
     options: opts
   });
   attachRefLines(historicalChart, data.min_bank);
-  fillDailyTable(data.graph_data);
+  fillDailyTable(data.graph_data, data);
 }
 
 // ============================================================
 // DAILY TABLE
 // ============================================================
-function fillDailyTable(points) {
+function fillDailyTable(points, rangeMeta = {}) {
   const s = currentSite;
   const isDesign = currentScale === 'design' && !s.datumOffsetLocal;
   const conv = v => isDesign ? msl2design(v) : v;
@@ -987,7 +1054,11 @@ function fillDailyTable(points) {
       <td style="color:${distColor}">${distMin!==null?distMin.toFixed(2):'—'}</td>
     </tr>`;
   }).join('');
-  document.querySelector('#daily-table tbody').innerHTML = rows;
+  document.getElementById('daily-statistics-title').textContent = rangeMeta.fallback_to_latest
+    ? 'Daily Statistics (ช่วงข้อมูลจริงล่าสุดก่อนสถานีหยุดส่ง)'
+    : 'Daily Statistics (จาก station telemetry)';
+  document.querySelector('#daily-table tbody').innerHTML = rows || `
+    <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px">ไม่พบข้อมูลจริงในช่วงที่เลือก</td></tr>`;
 }
 
 // ============================================================
