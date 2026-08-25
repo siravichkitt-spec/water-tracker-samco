@@ -1,8 +1,8 @@
 # SAMCO Water Level Tracker — Operations Handoff
 
-**Version:** v3
+**Version:** v4
 
-**Verified:** 2026-08-18
+**Verified:** 2026-08-25
 
 **Entity:** SAMCO LOGISTICS — (ก) แพนสั่งได้เอง
 
@@ -16,8 +16,9 @@ The water tracker is stored in the Supabase project named `samco-logistics`, pro
 Data path:
 
 ```text
-ThaiWater public API
-  -> protected water-tracker-poll Edge Function
+ThaiWater public API -> protected water-tracker-poll Edge Function
+RID Big Data historical API -> protected water-tracker-backfill Edge Function
+  -> validated station identity/value/timestamp
   -> SAMCO LOGISTICS Supabase Postgres
   -> RLS public SELECT-only API + Supabase Realtime
   -> Vercel public dashboard
@@ -45,6 +46,8 @@ RLS is enabled on all four exposed tables. The public roles have no INSERT, UPDA
 - Called by `pg_cron` every 15 minutes.
 - Requires `x-samco-cron-secret`; the secret is read by the scheduler from Supabase Vault.
 - Fetches ThaiWater once, filters configured stations, validates values/timestamps, and upserts idempotently.
+- For RID telemetry codes (`TKS.*`), also reads the official RID Big Data feed and persists whichever authoritative reading has the newest source timestamp. This keeps TKS.121 current when the ThaiWater live mirror is stale.
+- Rejects `null`, blank, non-numeric, and timezone-free RID values; a missing value is never converted to zero.
 - Creates at most one severity per reading and logs ingestion health.
 
 ### `water-tracker-backfill`
@@ -52,13 +55,17 @@ RLS is enabled on all four exposed tables. The public roles have no INSERT, UPDA
 - Maintenance only; `POST` plus the same scheduler secret.
 - `days` must be an integer from 1 through 365.
 - Optional `site=<site_id>` restricts the maintenance run.
+- Defaults to a read-only dry run. It fetches and validates the source but writes neither readings nor an ingestion run.
+- A write requires the explicit query parameter `write=true`. Source validation is all-or-nothing: if any selected site has no valid values, no readings are written.
+- Reads historical telemetry from the official RID Big Data station endpoint using each configured `station_code`.
+- Station identity mismatches, `null`, blank, non-numeric, timezone-free/invalid timestamps, and conflicting duplicate values are rejected; `null` is never converted to zero.
 - A publishable key is never sufficient to invoke it.
 
-To invoke a backfill without copying the secret out of Vault, run this inside the Supabase SQL editor and change only the non-secret query parameters:
+First run this dry run without copying the secret out of Vault. Change only the non-secret query parameters:
 
 ```sql
 select net.http_post(
-  url := 'https://yiyoagypmcnatdauuadf.supabase.co/functions/v1/water-tracker-backfill?days=30&site=thachin-nakhonchaisi',
+  url := 'https://yiyoagypmcnatdauuadf.supabase.co/functions/v1/water-tracker-backfill?days=365&site=buengkan-nam-hi',
   headers := jsonb_build_object(
     'x-samco-cron-secret', (
       select decrypted_secret
@@ -72,6 +79,8 @@ select net.http_post(
   timeout_milliseconds := 60000
 );
 ```
+
+Only after the response says both `ok: true` and `safe_to_write: true`, invoke the same URL with `&write=true`. A `422` response with `source_has_no_valid_water_level_values` means the upstream historical endpoint has timestamps but no usable readings; leave production data unchanged and escalate the source gap.
 
 ## Dashboard semantics
 

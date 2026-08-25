@@ -4,15 +4,16 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SERVICE_ROLE = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const THAIWATER_URL =
   "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_load";
+const RID_HISTORY_URL =
+  "https://bigdata-api.rid.go.th/api/v1/ma/pier/rid/get_pier_by_station";
 const MIN_POLL_INTERVAL_MS = 8 * 60 * 1000;
 
 interface Site {
   id: string;
   station_id: number | null;
+  station_code: string | null;
   datum_offset: number;
   datum_offset_local: boolean;
   alert_warn_design_level: number | null;
@@ -22,6 +23,7 @@ interface Site {
 interface NormalizedReading {
   measured_at: string;
   wl_msl: number;
+  source: "thaiwater_v3" | "rid_bigdata";
   raw: Record<string, unknown>;
 }
 
@@ -37,6 +39,26 @@ function json(body: unknown, status = 200) {
 
 function errorText(error: unknown) {
   return error instanceof Error ? error.message.slice(0, 500) : "unknown_error";
+}
+
+export function finiteNumber(value: unknown): number | null {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string" && value.trim() === "") return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function utcTimestamp(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const text = value.trim();
+  if (
+    !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}:\d{2})$/
+      .test(text)
+  ) {
+    return null;
+  }
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
 function normalizeThaiTimestamp(value: unknown): string | null {
@@ -56,15 +78,20 @@ function normalizeStation(
   row: Record<string, unknown>,
 ): [number, NormalizedReading] | null {
   const station = (row.station ?? {}) as Record<string, unknown>;
-  const stationId = Number(station.id);
-  const wlMsl = Number(row.waterlevel_msl ?? row.value);
+  const stationId = finiteNumber(station.id);
+  const wlMsl = finiteNumber(row.waterlevel_msl ?? row.value);
   const measuredAt = normalizeThaiTimestamp(
     row.waterlevel_datetime ?? row.datetime ?? row.time,
   );
-  if (!Number.isFinite(stationId) || !Number.isFinite(wlMsl) || !measuredAt) {
+  if (stationId === null || wlMsl === null || !measuredAt) {
     return null;
   }
-  return [stationId, { measured_at: measuredAt, wl_msl: wlMsl, raw: row }];
+  return [stationId, {
+    measured_at: measuredAt,
+    wl_msl: wlMsl,
+    source: "thaiwater_v3",
+    raw: row,
+  }];
 }
 
 async function fetchThaiWater(): Promise<Map<number, NormalizedReading>> {
@@ -87,15 +114,74 @@ async function fetchThaiWater(): Promise<Map<number, NormalizedReading>> {
   return stations;
 }
 
+async function fetchRidLatest(
+  stationCode: string,
+): Promise<NormalizedReading | null> {
+  const bangkokDate = (timestamp: number) =>
+    new Date(timestamp + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const endpoint = new URL(RID_HISTORY_URL);
+  endpoint.searchParams.set("station_code", stationCode);
+  endpoint.searchParams.set(
+    "from_date",
+    bangkokDate(Date.now() - 2 * 86_400_000),
+  );
+  endpoint.searchParams.set("to_date", bangkokDate(Date.now()));
+  const response = await fetch(endpoint, {
+    headers: { "User-Agent": "SAMCO-water-tracker/4.0" },
+    signal: AbortSignal.timeout(20_000),
+  });
+  if (!response.ok) throw new Error(`RID Big Data HTTP ${response.status}`);
+  const payload = await response.json();
+  if (payload?.success !== true || !Array.isArray(payload?.data)) {
+    throw new Error("RID Big Data response shape changed");
+  }
+  let latest: NormalizedReading | null = null;
+  for (const candidate of payload.data as Record<string, unknown>[]) {
+    if (String(candidate.station_code ?? "") !== stationCode) continue;
+    const measuredAt = utcTimestamp(candidate.hourly_time_utc);
+    const wlMsl = finiteNumber(candidate.wl_values);
+    if (!measuredAt || wlMsl === null) continue;
+    const reading: NormalizedReading = {
+      measured_at: measuredAt,
+      wl_msl: wlMsl,
+      source: "rid_bigdata",
+      raw: candidate,
+    };
+    if (
+      !latest ||
+      new Date(reading.measured_at).getTime() >
+        new Date(latest.measured_at).getTime()
+    ) {
+      latest = reading;
+    }
+  }
+  return latest;
+}
+
+export function freshestReading(
+  primary: NormalizedReading | null | undefined,
+  fallback: NormalizedReading | null | undefined,
+): NormalizedReading | null {
+  if (!primary) return fallback ?? null;
+  if (!fallback) return primary;
+  return new Date(fallback.measured_at).getTime() >
+      new Date(primary.measured_at).getTime()
+    ? fallback
+    : primary;
+}
+
 async function authorize(
   supabase: any,
   request: Request,
 ) {
   const cronSecret = request.headers.get("x-samco-cron-secret");
   if (!cronSecret) return false;
-  const { data, error } = await supabase.rpc("water_tracker_verify_cron_secret", {
-    p_secret: cronSecret,
-  });
+  const { data, error } = await supabase.rpc(
+    "water_tracker_verify_cron_secret",
+    {
+      p_secret: cronSecret,
+    },
+  );
   if (error) throw error;
   return data === true;
 }
@@ -122,11 +208,16 @@ async function finishRun(
   if (error) console.error("failed to update ingestion run", error);
 }
 
-Deno.serve(async (request: Request) => {
+export async function handlePoll(request: Request) {
   if (request.method !== "GET") {
     return json({ ok: false, error: "method_not_allowed" }, 405);
   }
-  const supabase = createClient(SUPABASE_URL, SERVICE_ROLE, {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL");
+  const serviceRole = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (!supabaseUrl || !serviceRole) {
+    return json({ ok: false, error: "server_configuration_error" }, 500);
+  }
+  const supabase = createClient(supabaseUrl, serviceRole, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   let runId: number | null = null;
@@ -159,13 +250,37 @@ Deno.serve(async (request: Request) => {
     const { data: sites, error: sitesError } = await supabase
       .from("water_tracker_sites")
       .select(
-        "id, station_id, datum_offset, datum_offset_local, alert_warn_design_level, alert_crit_design_level",
+        "id, station_id, station_code, datum_offset, datum_offset_local, alert_warn_design_level, alert_crit_design_level",
       )
       .eq("is_active", true)
       .order("sort_order", { ascending: true });
     if (sitesError) throw sitesError;
 
     const stationReadings = await fetchThaiWater();
+    const ridReadings = new Map<string, NormalizedReading>();
+    const sourceWarnings: Record<string, unknown>[] = [];
+    await Promise.all(
+      ((sites ?? []) as Site[])
+        .filter((site) => site.station_code?.startsWith("TKS."))
+        .map(async (site) => {
+          try {
+            const reading = await fetchRidLatest(String(site.station_code));
+            if (reading) ridReadings.set(site.id, reading);
+            else {
+              sourceWarnings.push({
+                site_id: site.id,
+                reason: "rid_history_no_valid_data",
+              });
+            }
+          } catch (error) {
+            sourceWarnings.push({
+              site_id: site.id,
+              reason: "rid_history_error",
+              error: errorText(error),
+            });
+          }
+        }),
+    );
     const readingRows: Record<string, unknown>[] = [];
     const skipped: Record<string, unknown>[] = [];
     for (const site of (sites ?? []) as Site[]) {
@@ -173,20 +288,24 @@ Deno.serve(async (request: Request) => {
         skipped.push({ site_id: site.id, reason: "no_station" });
         continue;
       }
-      const reading = stationReadings.get(Number(site.station_id));
+      const reading = freshestReading(
+        stationReadings.get(Number(site.station_id)),
+        ridReadings.get(site.id),
+      );
       if (!reading) {
         skipped.push({ site_id: site.id, reason: "no_data" });
         continue;
       }
+      const datumOffset = finiteNumber(site.datum_offset);
       readingRows.push({
         site_id: site.id,
         station_id: Number(site.station_id),
         measured_at: reading.measured_at,
         wl_msl: reading.wl_msl,
-        wl_design: site.datum_offset_local
+        wl_design: site.datum_offset_local || datumOffset === null
           ? null
-          : reading.wl_msl + Number(site.datum_offset),
-        source: "thaiwater_v3",
+          : reading.wl_msl + datumOffset,
+        source: reading.source,
         raw: reading.raw,
       });
     }
@@ -260,7 +379,7 @@ Deno.serve(async (request: Request) => {
       active_sites: sites?.length ?? 0,
       processed_readings: persisted?.length ?? 0,
       alert_count: alerts.length,
-      skipped,
+      skipped: [...skipped, ...sourceWarnings],
       source_latest_at: sourceLatestAt
         ? new Date(sourceLatestAt).toISOString()
         : null,
@@ -271,7 +390,7 @@ Deno.serve(async (request: Request) => {
       active_sites: sites?.length ?? 0,
       processed_readings: persisted?.length ?? 0,
       alerts: alerts.length,
-      skipped,
+      skipped: [...skipped, ...sourceWarnings],
     });
   } catch (error) {
     console.error("water-tracker-poll failed", error);
@@ -283,4 +402,8 @@ Deno.serve(async (request: Request) => {
     }
     return json({ ok: false, error: errorText(error) }, 500);
   }
-});
+}
+
+if (import.meta.main) {
+  Deno.serve(handlePoll);
+}
