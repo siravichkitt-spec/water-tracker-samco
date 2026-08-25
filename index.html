@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="samco-release" content="water-tracker-v3.1-20260825">
+<meta name="samco-release" content="water-tracker-v3.2-20260825">
 <title>Water Level Tracker — SAMCO</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%233ec6ff'/%3E%3Cpath d='M32 12C24 24 18 31 18 40a14 14 0 0 0 28 0c0-9-6-16-14-28Z' fill='%230b1220'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -222,7 +222,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 <div class="footer-note">
   <strong>Source:</strong> ThaiWater / สสน. → Supabase project <code>samco-logistics</code> → public read-only dashboard · หน่วยต้นทางเป็น <strong>ม.รทก.</strong><br>
   <strong>Data semantics:</strong> แสดงค่าที่ station ไม่ใช่ sensor ที่หน้างาน · สเกลแบบคำนวณด้วย <code>design = msl + offset</code> เฉพาะ site ที่ datum ใช้ร่วมกันได้<br>
-  <strong>Release:</strong> <code>water-tracker-v3.1-20260825</code> · Supabase Realtime + fallback refresh · ช่วงปัจจุบันว่างจะแสดงช่วงข้อมูลจริงล่าสุดพร้อมป้าย STALE
+  <strong>Release:</strong> <code>water-tracker-v3.2-20260825</code> · Supabase Realtime + fallback refresh · กราฟปรับแกนตามช่วงข้อมูลจริงพร้อมแจ้ง partial coverage
 </div>
 
 </div>
@@ -424,16 +424,7 @@ async function fetchRangeFromDB(siteId, startISO, endISO) {
   const spanDays = spanMs / 86400000;
   if (!Number.isFinite(spanMs) || spanMs <= 0) throw new Error('Invalid historical range');
 
-  const queryRange = async (rangeStart, rangeEnd) => {
-    // For long ranges, bucket server-side to stay below the PostgREST row limit.
-    if (spanDays > 45) {
-      const result = await sb.rpc('water_tracker_bucket', {
-        p_site: siteId, p_start: rangeStart, p_end: rangeEnd,
-        p_bucket_mins: spanDays > 180 ? 720 : 60
-      });
-      if (result.error) throw result.error;
-      return result.data || [];
-    }
+  const queryRawRange = async (rangeStart, rangeEnd) => {
     const result = await sb
       .from('water_tracker_readings')
       .select('measured_at, wl_msl, wl_design')
@@ -444,6 +435,19 @@ async function fetchRangeFromDB(siteId, startISO, endISO) {
       .limit(10000);
     if (result.error) throw result.error;
     return result.data || [];
+  };
+
+  const queryRange = async (rangeStart, rangeEnd) => {
+    // For long ranges, bucket server-side to stay below the PostgREST row limit.
+    if (spanDays > 45) {
+      const result = await sb.rpc('water_tracker_bucket', {
+        p_site: siteId, p_start: rangeStart, p_end: rangeEnd,
+        p_bucket_mins: spanDays > 180 ? 720 : 60
+      });
+      if (result.error) throw result.error;
+      return result.data || [];
+    }
+    return queryRawRange(rangeStart, rangeEnd);
   };
 
   let effectiveStart = startISO;
@@ -474,11 +478,56 @@ async function fetchRangeFromDB(siteId, startISO, endISO) {
     }
   }
 
+  // Bucket timestamps mark bucket edges, not the exact first/last telemetry.
+  // Resolve exact bounds for long requests; if the actual coverage is short,
+  // use raw rows so the zoomed chart and Daily Statistics remain exact.
+  let exactDataStart = null;
+  let exactDataEnd = null;
+  if (data.length > 0 && spanDays > 45) {
+    const [firstResult, lastResult] = await Promise.all([
+      sb.from('water_tracker_readings')
+        .select('measured_at')
+        .eq('site_id', siteId)
+        .gte('measured_at', effectiveStart)
+        .lte('measured_at', effectiveEnd)
+        .order('measured_at', { ascending: true })
+        .limit(1)
+        .maybeSingle(),
+      sb.from('water_tracker_readings')
+        .select('measured_at')
+        .eq('site_id', siteId)
+        .gte('measured_at', effectiveStart)
+        .lte('measured_at', effectiveEnd)
+        .order('measured_at', { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+    if (firstResult.error) throw firstResult.error;
+    if (lastResult.error) throw lastResult.error;
+    exactDataStart = firstResult.data?.measured_at || null;
+    exactDataEnd = lastResult.data?.measured_at || null;
+    const exactSpanDays = exactDataStart && exactDataEnd
+      ? (new Date(exactDataEnd) - new Date(exactDataStart)) / 86400000
+      : null;
+    if (Number.isFinite(exactSpanDays) && exactSpanDays <= 30) {
+      data = await queryRawRange(exactDataStart, exactDataEnd);
+    }
+  }
+
   // Keep timestamps as ISO strings so the browser never guesses the timezone.
   const raw = data.map(r => ({
     datetime: r.measured_at,
     value: Number(r.wl_msl),
   }));
+  const dataStart = exactDataStart || raw[0]?.datetime || null;
+  const dataEnd = exactDataEnd || raw[raw.length - 1]?.datetime || null;
+  // Ignore normal telemetry lag/edge sampling up to two hours, but flag a
+  // requested range whose records cover only a materially smaller span.
+  const coverageToleranceMs = 2 * 60 * 60 * 1000;
+  const coverageIsPartial = Boolean(dataStart && dataEnd && (
+    new Date(dataStart).getTime() > new Date(startISO).getTime() + coverageToleranceMs ||
+    new Date(dataEnd).getTime() < new Date(endISO).getTime() - coverageToleranceMs
+  ));
   const MAX_POINTS = 500;
   let decimated = raw;
   if (raw.length > MAX_POINTS) {
@@ -495,6 +544,9 @@ async function fetchRangeFromDB(siteId, startISO, endISO) {
     requested_end: endISO,
     effective_start: effectiveStart,
     effective_end: effectiveEnd,
+    data_start: dataStart,
+    data_end: dataEnd,
+    coverage_is_partial: coverageIsPartial,
   };
 }
 
@@ -913,7 +965,7 @@ async function renderRecentChart() {
     ? 'Recent Range (ช่วงข้อมูลจริงล่าสุด 3 วัน)'
     : 'Recent Range (3 วัน, station telemetry)';
   if (data.fallback_to_latest) {
-    note.textContent = `ไม่มีข้อมูลใน 3 วันล่าสุด · แสดงข้อมูลจริงช่วง ${formatThaiDateTime(data.effective_start)} ถึง ${formatThaiDateTime(data.effective_end)} · ไม่มีการเติมค่าหรือสร้างข้อมูลจำลอง`;
+    note.textContent = `ไม่มีข้อมูลใน 3 วันล่าสุด · แสดงข้อมูลจริงช่วง ${formatThaiDateTime(data.data_start || data.effective_start)} ถึง ${formatThaiDateTime(data.data_end || data.effective_end)} · ไม่มีการเติมค่าหรือสร้างข้อมูลจำลอง`;
     note.classList.add('visible');
   } else {
     note.textContent = '';
@@ -958,10 +1010,27 @@ async function renderHistoricalChart(days) {
   }
   const effectiveStart = new Date(data.effective_start || start);
   const effectiveEnd = new Date(data.effective_end || now);
-  window._histBounds = { start: effectiveStart, end: effectiveEnd };
+  let visibleStart = new Date(data.data_start || effectiveStart);
+  let visibleEnd = new Date(data.data_end || effectiveEnd);
+  if (!Number.isFinite(visibleStart.getTime()) || !Number.isFinite(visibleEnd.getTime())) {
+    visibleStart = effectiveStart;
+    visibleEnd = effectiveEnd;
+  }
+  if (visibleStart.getTime() >= visibleEnd.getTime()) {
+    const center = Number.isFinite(visibleStart.getTime()) ? visibleStart.getTime() : now.getTime();
+    const requestedSpanMs = days * 24 * 60 * 60 * 1000;
+    const paddingMs = Math.min(12 * 60 * 60 * 1000, Math.max(requestedSpanMs / 20, 60 * 60 * 1000));
+    visibleStart = new Date(center - paddingMs);
+    visibleEnd = new Date(center + paddingMs);
+  }
+  window._histBounds = { start: visibleStart, end: visibleEnd };
   const rangeNote = document.getElementById('historical-range-note');
+  const rangeLabel = days === 365 ? '1 ปี' : `${days} วัน`;
   if (data.fallback_to_latest) {
-    rangeNote.textContent = `ช่วง ${days} วันล่าสุดไม่มีข้อมูล · กราฟและตารางด้านล่างแสดงช่วงข้อมูลจริงล่าสุด ${formatThaiDateTime(data.effective_start)} ถึง ${formatThaiDateTime(data.effective_end)} · สถานะยังเป็น STALE`;
+    rangeNote.textContent = `ช่วง ${rangeLabel}ล่าสุดไม่มีข้อมูล · กราฟและตารางด้านล่างแสดงช่วงข้อมูลจริงล่าสุด ${formatThaiDateTime(data.data_start || data.effective_start)} ถึง ${formatThaiDateTime(data.data_end || data.effective_end)} · สถานะยังเป็น STALE`;
+    rangeNote.classList.add('visible');
+  } else if (data.coverage_is_partial) {
+    rangeNote.textContent = `ช่วง ${rangeLabel}มีข้อมูลจริงเฉพาะ ${formatThaiDateTime(data.data_start)} ถึง ${formatThaiDateTime(data.data_end)} · กราฟปรับแกนตามข้อมูลจริง · ไม่มีการเติมค่าหรือสร้างข้อมูลจำลอง`;
     rangeNote.classList.add('visible');
   } else {
     rangeNote.textContent = '';
@@ -974,8 +1043,9 @@ async function renderHistoricalChart(days) {
   }));
   const ctx = document.getElementById('chart-historical').getContext('2d');
   if (historicalChart) historicalChart.destroy();
-  // Choose x-axis time unit based on range span so labels show dates, not repeating hours
-  const xUnit = days <= 3 ? 'hour' : days <= 14 ? 'day' : days <= 60 ? 'day' : days <= 180 ? 'week' : 'month';
+  // Choose labels from the visible real-data span, not the requested range.
+  const visibleSpanDays = (visibleEnd.getTime() - visibleStart.getTime()) / 86400000;
+  const xUnit = visibleSpanDays <= 3 ? 'hour' : visibleSpanDays <= 60 ? 'day' : visibleSpanDays <= 180 ? 'week' : 'month';
   const opts = chartOpts();
   opts.scales.x.time = {
     unit: xUnit,
@@ -1056,7 +1126,9 @@ function fillDailyTable(points, rangeMeta = {}) {
   }).join('');
   document.getElementById('daily-statistics-title').textContent = rangeMeta.fallback_to_latest
     ? 'Daily Statistics (ช่วงข้อมูลจริงล่าสุดก่อนสถานีหยุดส่ง)'
-    : 'Daily Statistics (จาก station telemetry)';
+    : rangeMeta.coverage_is_partial
+      ? 'Daily Statistics (ช่วงข้อมูลจริงที่มีในช่วงที่เลือก)'
+      : 'Daily Statistics (จาก station telemetry)';
   document.querySelector('#daily-table tbody').innerHTML = rows || `
     <tr><td colspan="6" style="text-align:center;color:var(--text-dim);padding:20px">ไม่พบข้อมูลจริงในช่วงที่เลือก</td></tr>`;
 }
