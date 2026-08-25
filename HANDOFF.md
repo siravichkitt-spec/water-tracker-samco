@@ -87,7 +87,7 @@ Only after the response says both `ok: true` and `safe_to_write: true`, invoke t
 - `LIVE`, `DELAYED`, and `STALE` derive from the median interval of recent readings at that station.
 - Change is calculated from the previous stored reading. If none exists, the UI says there is no prior reading; it never substitutes zero.
 - The page shows the source timestamp, database receipt time, station identity, and ingestion health.
-- Buengkan uses a local project datum that is incompatible with ThaiWater MSL. Design conversion, distance-to-crest, distance-to-pile, reference overlays, and related alerts must remain disabled until field calibration supplies an approved conversion.
+- Buengkan uses a local project datum that is incompatible with TKS.121 MSL telemetry. Design conversion, distance-to-crest, distance-to-pile, reference overlays, and related alerts must remain disabled until field calibration supplies an approved conversion.
 - Every site uses a nearby/proxy gauge unless a field sensor is explicitly installed. The UI must never relabel a station measurement as an on-site measurement.
 
 ## Verification checklist
@@ -96,7 +96,7 @@ Only after the response says both `ok: true` and `safe_to_write: true`, invoke t
 2. Confirm all public water tracker tables have RLS enabled and public roles have SELECT only.
 3. Call both Edge Function URLs without the scheduler secret; expect `401` for the allowed HTTP method.
 4. Confirm `water_tracker_readings` and `water_tracker_ingestion_runs` are in the `supabase_realtime` publication.
-5. Compare the latest timestamp and `wl_msl` for all configured stations against ThaiWater.
+5. Compare the latest timestamp and `wl_msl` for all configured stations against their configured authoritative feed (ThaiWater and RID Big Data for `TKS.*`).
 6. Confirm `water_tracker_ingestion_runs` reports a recent successful poll.
 7. Open production, switch all sites, switch MSL/design scale, and verify Buengkan cannot select design scale.
 8. Confirm no browser console error and no service-role/cron secret in HTML, Git, or logs.
@@ -115,7 +115,7 @@ Only after the response says both `ok: true` and `safe_to_write: true`, invoke t
 
 1. Check `water_tracker_ingestion_runs` for the last status and error.
 2. Check Supabase Edge Function logs for `water-tracker-poll`.
-3. Compare one station directly with ThaiWater.
+3. Compare one station directly with its authoritative upstream source.
 4. Check `cron.job` and recent `cron.job_run_details`.
 5. If upstream is stale, leave the last valid reading intact and keep the dashboard marked `STALE`; never insert a made-up replacement.
 

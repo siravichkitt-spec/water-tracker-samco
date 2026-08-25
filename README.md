@@ -4,12 +4,12 @@ Public read-only, source-driven near-real-time monitoring for SAMCO LOGISTICS ba
 
 - Production: https://samco-water-tracker.vercel.app
 - Data owner: Supabase project `samco-logistics` (`yiyoagypmcnatdauuadf`)
-- Upstream source: ThaiWater public API
+- Upstream sources: ThaiWater public API and RID Big Data historical/telemetry API
 - Frontend: static HTML, Chart.js, Supabase JS
 - Ingestion: protected Supabase Edge Functions called by `pg_cron`
 - Realtime: Supabase Postgres Changes with a timed fallback read
 
-The dashboard displays measurements at the configured ThaiWater station. A station value is not represented as an on-site sensor measurement. Design-scale comparisons are disabled whenever the source and project datums are incompatible.
+The dashboard displays measurements at the configured station from the freshest validated authoritative feed. A station value is not represented as an on-site sensor measurement. Design-scale comparisons are disabled whenever the source and project datums are incompatible.
 
 ## Security model
 
