@@ -25,6 +25,7 @@ CREATE TABLE public.water_tracker_sites (
   datum_warning             text,
   datum_offset_local        boolean NOT NULL DEFAULT false,
   design_levels             jsonb DEFAULT '[]'::jsonb,       -- [{label, value, color, kind}]
+  typical_sections          jsonb NOT NULL DEFAULT '[]'::jsonb CHECK (jsonb_typeof(typical_sections) = 'array'),
   reference_water_levels    jsonb DEFAULT '[]'::jsonb,       -- [{label, value, color}]
   alert_warn_design_level   numeric,
   alert_crit_design_level   numeric,

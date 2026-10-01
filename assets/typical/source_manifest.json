@@ -1,0 +1,37 @@
+[
+  {
+    "asset": "thachin",
+    "originalFile": "ท่าจีน.pdf",
+    "pages": 2,
+    "sha256": "0e4453a1616414e5e0a91d9bd195c811e5102a5d684e802ae394d3f09385a9d5",
+    "reviewedAt": "2026-10-01"
+  },
+  {
+    "asset": "prachinburi",
+    "originalFile": "บ้านบึงกาฬ ปราจีน.pdf",
+    "pages": 1,
+    "sha256": "f2c39414a3554f357bf5931538ddb18ff504adaa6527c8f706075a7a0004b2aa",
+    "reviewedAt": "2026-10-01"
+  },
+  {
+    "asset": "angthong",
+    "originalFile": "อ่างทอง.pdf",
+    "pages": 1,
+    "sha256": "ff1b9bceafffb25f7d97d9da822063837f43a5cfecea1b70a055376d148a0fa7",
+    "reviewedAt": "2026-10-01"
+  },
+  {
+    "asset": "nan",
+    "originalFile": "เเม่นำ้น่าน พิษณุโลก.pdf",
+    "pages": 1,
+    "sha256": "20f5aba3227858e10620cabfec0d3645aa21f10df2be9c5ec3b6eced8ad214c6",
+    "reviewedAt": "2026-10-01"
+  },
+  {
+    "asset": "buengkan",
+    "originalFile": "เเม่นำ้ฮี้ บึงกาฬ.pdf",
+    "pages": 1,
+    "sha256": "dc50d561a3aa1b922501f380e50b22231aa9a5277b6bf56aaff50bbcd5281c9d",
+    "reviewedAt": "2026-10-01"
+  }
+]

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="samco-release" content="water-tracker-v3.3-20260825">
+<meta name="samco-release" content="water-tracker-v4.0-20261001">
 <title>Water Level Tracker — SAMCO</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%233ec6ff'/%3E%3Cpath d='M32 12C24 24 18 31 18 40a14 14 0 0 0 28 0c0-9-6-16-14-28Z' fill='%230b1220'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,6 +12,8 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
+<script src="typical-sections.js"></script>
+<script src="typical-ui.js"></script>
 <style>
 :root {
   --bg: #0b1220;
@@ -124,6 +126,48 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 .drawing-notes li.current span:first-child { color: var(--accent); }
 .drawing-notes li.header { font-weight: 600; color: var(--text) !important; border-bottom: 1px solid var(--border); padding: 8px 0 4px; }
 .drawing-notes li.header span:first-child { color: var(--text); }
+.typical-summary { display:flex; justify-content:space-between; gap:18px; flex-wrap:wrap; font-size:13px; }
+.typical-summary label { display:flex; flex-direction:column; gap:6px; color:var(--text-dim); }
+.typical-summary select { max-width:100%; background:var(--surface-2); color:var(--text); padding:8px; border:1px solid var(--border); border-radius:6px; font:inherit; }
+.typical-limit { color:#fde68a; font-size:12px; margin:14px 0; }
+.typical-card { border:1px solid var(--border); border-radius:10px; margin-top:18px; overflow:hidden; }
+.typical-card.selected { border-color:var(--accent); }
+.typical-card-header { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; padding:16px; background:var(--surface-2); }
+.typical-card h4 { font-size:16px; margin-bottom:4px; }
+.typical-card-header p, .typical-preview p { font-size:11px; color:var(--text-dim); }
+.typical-card button, .drawing-dialog button { padding:8px 12px; border:1px solid var(--border); border-radius:6px; background:var(--surface); color:var(--accent); cursor:pointer; font:inherit; font-size:12px; }
+.typical-source { display:grid; grid-template-columns:1fr 1fr; gap:20px; padding:16px; }
+.typical-preview .drawing-open { display:block; width:100%; padding:0; background:white; overflow:hidden; }
+.typical-preview img { width:100%; height:auto; display:block; }
+.drawing-open span { display:block; padding:8px; background:var(--surface-2); }
+.typical-preview a { color:var(--accent); }
+.typical-preview p { padding-top:8px; }
+.typical-notes { font-size:12px; }
+.typical-notes ul, .typical-audit ul { padding-left:20px; margin:8px 0 12px; }
+.typical-notes li { margin:5px 0; }
+.section-variant { padding:10px; border:1px solid var(--border); background:var(--surface-2); margin:8px 0; border-radius:6px; }
+.components-scroll { overflow-x:auto; }
+.components-table { font-family:inherit; min-width:820px; }
+.components-table th, .components-table td { text-align:left; vertical-align:top; }
+.components-table td:nth-child(1) { width:22%; }
+.components-table td:nth-child(2) { width:34%; }
+.components-table td:nth-child(3) { width:24%; }
+.components-table td:nth-child(4) { width:20%; }
+.components-table small { display:block; font-size:10px; color:var(--text-dim); margin-top:5px; }
+.component-index { color:var(--accent); font-family:monospace; }
+.component-level { margin-bottom:6px; }
+.missing-level { color:#fde68a; }
+.typical-audit { padding:12px 16px; font-size:12px; color:var(--text-dim); }
+.typical-audit summary { cursor:pointer; color:var(--accent); }
+.typical-audit p { margin:8px 0; }
+.drawing-dialog { width:96vw; height:94vh; max-width:none; max-height:none; margin:auto; padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--text); }
+.drawing-dialog::backdrop { background:rgba(0,0,0,.8); }
+.drawing-toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding-bottom:12px; }
+.drawing-toolbar p { flex:1; font-size:12px; }
+.drawing-toolbar input { width:140px; }
+.drawing-viewport { height:calc(100% - 65px); overflow:auto; background:#fff; }
+.drawing-viewport img { display:block; max-width:none; width:100%; }
+@media(max-width:700px) { .typical-source { grid-template-columns:1fr; } .typical-card-header { flex-direction:column; } .typical-summary select { width:100%; } }
 
 .footer-note { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim); line-height: 1.75; }
 .footer-note strong { color: var(--text); }
@@ -175,16 +219,11 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 </div>
 
 <div class="grid" style="margin-bottom: 20px;">
-  <div class="card col-6">
-    <h3>Cross-Section (แบบเขื่อน + ค่าจาก station)</h3>
-    <div class="section-drawing">
-      <svg class="drawing-svg" id="section-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:auto"></svg>
-      <div class="drawing-notes">
-        <ul id="section-legend"></ul>
-      </div>
-    </div>
+  <div class="card col-12">
+    <h3>Typical Sections — ทุก component ตามแบบต้นฉบับ</h3>
+    <div id="typical-sections"></div>
   </div>
-  <div class="card col-6">
+  <div class="card col-12">
     <h3 id="recent-range-title">Recent Range (3 วัน, station telemetry)</h3>
     <div class="range-note" id="recent-range-note"></div>
     <div class="chart-container small"><canvas id="chart-recent"></canvas></div>
@@ -222,11 +261,15 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 <div class="footer-note">
   <strong>Source:</strong> ThaiWater / สสน. + RID Big Data / กรมชลประทาน → Supabase project <code>samco-logistics</code> → public read-only dashboard · หน่วยต้นทางเป็น <strong>ม.รทก.</strong><br>
   <strong>Data semantics:</strong> แสดงค่าที่ station ไม่ใช่ sensor ที่หน้างาน · สเกลแบบคำนวณด้วย <code>design = msl + offset</code> เฉพาะ site ที่ datum ใช้ร่วมกันได้<br>
-  <strong>Release:</strong> <code>water-tracker-v3.3-20260825</code> · Supabase Realtime + RID live fallback/backfill · กราฟปรับแกนตามช่วงข้อมูลจริงพร้อมแจ้ง partial coverage
+  <strong>Release:</strong> <code>water-tracker-v4.0-20261001</code> · Typical sections จากแบบจริง + ทุก component + section-specific levels · Supabase Realtime + RID live fallback/backfill
 </div>
 
 </div>
 
+<dialog class="drawing-dialog" id="drawing-dialog" aria-label="ภาพแบบ typical section">
+  <div class="drawing-toolbar"><p id="drawing-title"></p><label>Zoom <input type="range" id="drawing-zoom" min="100" max="400" step="25" value="100"></label><button id="drawing-close" type="button">ปิดแบบ</button></div>
+  <div class="drawing-viewport"><img id="drawing-image" alt="ภาพแบบต้นฉบับ"></div>
+</dialog>
 <script>
 // ============================================================
 // SITE CONFIGURATION
@@ -279,9 +322,9 @@ const SITES_FALLBACK = [
     datumWarning: 'Offset สะอาดที่สุด 5/5 หมุด verified. Sanity check MSL max design +99.780 = MSL +40.003 vs NAN006 bank +39.86 (ห่าง 0.78 km) → ต่างเพียง 14 cm. Excellent quality',
     designLevels: [
       { label: 'ระดับสันเขื่อน', value: 100.50, color: '#fbbf24', kind: 'crest' },
-      { label: 'ระดับสันหินทิ้ง', value: 98.00, color: '#fb923c', kind: 'riprap' },
+      { label: 'ระดับสันหินเรียง', value: 98.00, color: '#fb923c', kind: 'riprap' },
       { label: 'หัวเสาเข็มเสริมกำลังดิน', value: 92.50, color: '#a78bfa', kind: 'pile' },
-      { label: 'ระดับหินเรียง', value: 91.50, color: '#94a3c4', kind: 'riprap' },
+      { label: 'ระดับสันหินทิ้ง', value: 91.50, color: '#94a3c4', kind: 'riprap' },
     ],
     referenceWaterLevels: [
       { label: 'น้ำสูงสุดเฉลี่ย', value: 99.780, color: '#ef4444' },
@@ -306,8 +349,9 @@ const SITES_FALLBACK = [
     datumOffsetSource: 'GPS01 (สมมุติ 101.634 / MSL 10.213) + GPS02 (สมมุติ 100.000 / MSL 8.579) → offset 91.421 ตรงกัน spot-on ทั้ง 2 หมุด',
     datumWarning: 'C.7A บ้านบางแก้ว บนแม่น้ำเจ้าพระยาหลัก (2.73 km) แต่ site อยู่บนคลองบางแก้ว (สาขา) — ระดับน้ำจริงที่ site จะต่ำกว่า C.7A ประมาณ 5-6 m (WL max design +94.958 = MSL +3.537 vs C.7A bank +9.9)',
     designLevels: [
-      { label: 'ระดับสันเขื่อน', value: 96.500, color: '#fbbf24', kind: 'crest' },
-      { label: 'ระดับสันหินเรียง', value: 95.500, color: '#fb923c', kind: 'riprap' },
+      { label: 'ระดับสันเขื่อน', value: 99.000, color: '#fbbf24', kind: 'crest' },
+      { label: 'ระดับสันหินเรียง', value: 97.000, color: '#fb923c', kind: 'riprap' },
+      { label: 'ระดับสันหินทิ้ง', value: 92.600, color: '#94a3c4', kind: 'riprap' },
     ],
     referenceWaterLevels: [
       { label: 'น้ำท่วมเฉลี่ย (2554)', value: 95.424, color: '#ef4444' },
@@ -320,7 +364,7 @@ const SITES_FALLBACK = [
   {
     id: 'prachinburi',
     name: 'ปราจีนบุรี',
-    projectRef: 'SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำปราจีนบุรี ต.ศาลาลำดวน อ.เมือง จ.ปราจีนบุรี (68-PRJ-S7-01)',
+    projectRef: 'SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำปราจีนบุรี หมู่ 4 ต.หาดนางแก้ว อ.กบินทร์บุรี จ.ปราจีนบุรี (แบบ 68-PR03-SD-01)',
     lat: 13.966917,
     lng: 101.613333,
     mapsUrl: 'https://www.google.com/maps?q=13.966917,101.613333',
@@ -334,7 +378,7 @@ const SITES_FALLBACK = [
     datumWarning: 'BM04 outlier offset 91.133 (ต่าง 133mm) — น่าจะ typo. Sanity check: WL max design +99.515 = MSL +8.515 vs Kgt.3 bank +8.79 (10 km ห่าง) → ต่าง 27cm — แม่นมาก',
     designLevels: [
       { label: 'ระดับสันเขื่อน', value: 100.000, color: '#fbbf24', kind: 'crest' },
-      { label: 'ระดับสันหินเรียง', value: 97.500, color: '#fb923c', kind: 'riprap' },
+      { label: 'ระดับสันหินทิ้ง', value: 97.500, color: '#fb923c', kind: 'riprap' },
     ],
     referenceWaterLevels: [
       { label: 'น้ำสูงสุดเฉลี่ย', value: 99.515, color: '#ef4444' },
@@ -380,7 +424,7 @@ const sb = window.supabase.createClient(SB_URL, SB_ANON);
 
 // Map DB row (snake_case) -> UI object (camelCase)
 function dbRowToSite(row) {
-  return {
+  return SamcoTypical.hydrate({
     id: row.id,
     name: row.name,
     projectRef: row.project_ref,
@@ -402,7 +446,7 @@ function dbRowToSite(row) {
     referenceWaterLevels: Array.isArray(row.reference_water_levels) ? row.reference_water_levels : [],
     alertWarnDesignLevel: row.alert_warn_design_level,
     alertCritDesignLevel: row.alert_crit_design_level,
-  };
+  }, row.typical_sections);
 }
 
 async function loadSitesFromSupabase() {
@@ -415,7 +459,7 @@ async function loadSitesFromSupabase() {
   return data.map(dbRowToSite);
 }
 
-let SITES = SITES_FALLBACK; // replaced at boot
+let SITES = SITES_FALLBACK.map(site => SamcoTypical.hydrate(site)); // replaced at boot
 
 // Historical reads come only from the SAMCO LOGISTICS Supabase project.
 // Long ranges use a server-side bucket to stay below the PostgREST row limit.
@@ -564,6 +608,17 @@ function fmtDateOnly(d) { return fmtDate(d).slice(0,10); }
 // STATE
 // ============================================================
 let currentSite = SITES[0];
+let currentSectionId = null;
+function selectedSection(s = currentSite) {
+  return s.typicalSections?.find(section => section.id === currentSectionId) || s.typicalSections?.[0] || null;
+}
+function designLevelsFor(s = currentSite) {
+  const section = selectedSection(s);
+  return section ? SamcoTypical.levelsFor(section) : s.designLevels;
+}
+function referenceLevelsFor(s = currentSite) {
+  return selectedSection(s)?.referenceWaterLevels || s.referenceWaterLevels;
+}
 let currentScale = 'design';   // 'design' | 'msl'
 let currentDays = 3;
 let recentChart = null;
@@ -651,6 +706,11 @@ function renderSitePicker() {
   el.innerHTML = SITES.map(s => `<button data-id="${s.id}" class="${s.id===currentSite.id?'active':''}">${s.name}</button>`).join('');
   el.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     currentSite = SITES.find(s => s.id === b.dataset.id);
+    currentSectionId = null;
+    currentReading = null;
+    if (recentChart) { recentChart.destroy(); recentChart = null; }
+    if (historicalChart) { historicalChart.destroy(); historicalChart = null; }
+    document.querySelector('#daily-table tbody').innerHTML = '';
     configureScaleToggle();
     renderSitePicker();
     loadSite();
@@ -715,8 +775,8 @@ function renderKPIs() {
   const wlDesign = r.wlDesign == null ? null : Number(r.wlDesign);
   const change = r.previousMsl == null ? null : wlMsl - Number(r.previousMsl);
   const canCompareDesign = !s.datumOffsetLocal && wlDesign !== null;
-  const crest = s.designLevels.find(d => d.kind === 'crest');
-  const pileLevels = s.designLevels.filter(d => d.kind === 'pile').map(d => Number(d.value));
+  const crest = designLevelsFor(s).find(d => d.kind === 'crest');
+  const pileLevels = designLevelsFor(s).filter(d => d.kind === 'pile').map(d => Number(d.value));
   const highestPile = pileLevels.length ? Math.max(...pileLevels) : null;
   const distToCrest = canCompareDesign && crest ? Number(crest.value) - wlDesign : null;
   const distToPileTop = canCompareDesign && highestPile !== null ? highestPile - wlDesign : null;
@@ -756,7 +816,7 @@ function renderKPIs() {
       <div class="kpi-label">${crestDirection}</div>
       <div class="dual-value">
         <span class="primary ${distanceClass(distToCrest, 1)}">${distToCrest!==null?Math.abs(distToCrest).toFixed(2)+' ม.':'—'}</span>
-        <span class="secondary">${s.datumOffsetLocal ? 'datum ใช้เทียบกันไม่ได้' : crest ? `สันเขื่อน = +${Number(crest.value).toFixed(2)}` : 'ไม่มีระดับสันเขื่อนใน config'}</span>
+        <span class="secondary">${s.datumOffsetLocal ? 'datum ใช้เทียบกันไม่ได้' : crest ? `สันเขื่อน = +${Number(crest.value).toFixed(2)} · ${selectedSection()?.name || ''}` : 'ไม่มีระดับสันเขื่อนใน config'}</span>
       </div>
     </div>
     <div class="kpi">
@@ -774,74 +834,7 @@ function renderKPIs() {
 // RENDER: CROSS-SECTION (SVG)
 // ============================================================
 function renderCrossSection() {
-  const s = currentSite;
-  const r = currentReading;
-  const svg = document.getElementById('section-svg');
-  const legend = document.getElementById('section-legend');
-
-  const currentWlDesign = r && !s.datumOffsetLocal && r.wlDesign !== null
-    ? Number(r.wlDesign)
-    : null;
-  const domainValues = s.designLevels.map(d => d.value).concat(s.referenceWaterLevels.map(d => d.value));
-  if (currentWlDesign !== null) domainValues.push(currentWlDesign);
-  const minY = Math.min(...domainValues) - 1.5;
-  const maxY = Math.max(...domainValues) + 1;
-  const W = 400, H = 300;
-  const yScale = v => H - ((v - minY) / (maxY - minY)) * (H - 20) - 10;
-
-  const wallX = 140;
-  let paths = '';
-  paths += `<path d="M0 ${yScale(100)} L${wallX} ${yScale(100)} L${wallX} ${yScale(98)} L${wallX+30} ${yScale(97)} L${wallX+60} ${yScale(96)} L${wallX+90} ${yScale(95)} L${W} ${yScale(94)} L${W} ${H} L0 ${H} Z" fill="#1a2540" stroke="#3d4d78" stroke-width="1"/>`;
-  paths += `<rect x="${wallX-6}" y="${yScale(100)}" width="6" height="${yScale(95)-yScale(100)}" fill="#4a5578" stroke="#6b7ba8" stroke-width="1"/>`;
-  for (let i=0; i<5; i++) {
-    const px = wallX + 15 + i*18;
-    paths += `<line x1="${px}" y1="${yScale(97-i*0.3)}" x2="${px}" y2="${yScale(85)}" stroke="#6b7ba8" stroke-width="1"/>`;
-  }
-
-  // Overlay only when station MSL and project design datum are comparable.
-  let waterWave = '';
-  if (currentWlDesign !== null) {
-    const wy = yScale(currentWlDesign);
-    waterWave = `<path d="M${wallX} ${wy} L${W} ${wy} L${W} ${H} L${wallX} ${H} Z" fill="#3ec6ff" opacity="0.2"/>
-      <line x1="${wallX}" y1="${wy}" x2="${W}" y2="${wy}" stroke="#3ec6ff" stroke-width="2"/>
-      <text x="${W-4}" y="${wy-4}" fill="#3ec6ff" font-size="10" text-anchor="end" font-family="JetBrains Mono, monospace" font-weight="600">◀ น้ำ +${currentWlDesign.toFixed(2)}</text>`;
-  }
-
-  // Reference lines (design levels only for section)
-  let lines = '';
-  s.designLevels.forEach(d => {
-    const y = yScale(d.value);
-    lines += `<line x1="0" y1="${y}" x2="${W}" y2="${y}" stroke="${d.color}" stroke-width="1" stroke-dasharray="4 3" opacity="0.55"/>`;
-  });
-  const crestLevel = s.designLevels.find(d => d.kind === 'crest');
-  if (crestLevel) {
-    const y = yScale(crestLevel.value);
-    lines += `<text x="6" y="${y-3}" fill="${crestLevel.color}" font-size="9" text-anchor="start" font-family="JetBrains Mono, monospace">สันเขื่อน +${crestLevel.value.toFixed(2)}</text>`;
-  }
-
-  svg.innerHTML = paths + waterWave + lines;
-
-  const designHtml = s.designLevels.map(d =>
-    `<li><span>${d.label}</span><span style="color:${d.color}">+${d.value.toFixed(2)}</span></li>`
-  ).join('');
-  const refHtml = s.referenceWaterLevels.map(d =>
-    `<li><span>${d.label}</span><span style="color:${d.color}">+${d.value.toFixed(2)}</span></li>`
-  ).join('');
-  const liveHtml = !r ? '' : s.datumOffsetLocal ? `
-    <li class="current"><span>น้ำล่าสุดที่ station</span><span>${Number(r.wlMsl).toFixed(2)} ม.รทก.</span></li>
-    <li><span>เทียบระดับแบบ</span><span>ไม่ได้ — คนละ datum</span></li>
-  ` : `
-    <li class="current"><span>น้ำล่าสุด (derived design)</span><span>+${currentWlDesign.toFixed(2)}</span></li>
-    <li><span>น้ำล่าสุดที่ station</span><span>${Number(r.wlMsl).toFixed(2)} ม.รทก.</span></li>
-  `;
-  legend.innerHTML = `
-    <li class="header"><span>ระดับเขื่อน (แบบ)</span><span></span></li>
-    ${designHtml}
-    <li class="header"><span>ระดับน้ำอ้างอิง (แบบ)</span><span></span></li>
-    ${refHtml}
-    <li class="header"><span>ค่าล่าสุด (station)</span><span></span></li>
-    ${liveHtml}
-  `;
+  SamcoTypicalUI.render(currentSite, currentReading, selectedSection()?.id);
 }
 
 // ============================================================
@@ -883,10 +876,10 @@ function buildRefLines(stationBankMsl) {
   }
   const conv = v => isDesign ? v : design2msl(v);
   const refs = [];
-  s.designLevels.forEach(d => {
+  designLevelsFor(s).forEach(d => {
     refs.push({ label: d.label.replace('ระดับ',''), value: conv(d.value), color: d.color });
   });
-  s.referenceWaterLevels.forEach(d => {
+  referenceLevelsFor(s).forEach(d => {
     refs.push({ label: d.label, value: conv(d.value), color: d.color });
   });
   if (stationBankMsl !== undefined && stationBankMsl !== null) {
@@ -937,7 +930,7 @@ function chartOpts() {
             }
             const design = isDesign ? y : msl2design(y);
             const msl = isDesign ? design2msl(y) : y;
-            const crest = s.designLevels.find(d => d.kind === 'crest');
+            const crest = designLevelsFor(s).find(d => d.kind === 'crest');
             const diff = crest ? crest.value - design : null;
             return [
               `สเกลแบบ: +${design.toFixed(3)}`,
@@ -955,10 +948,15 @@ function chartOpts() {
 // ============================================================
 // CHARTS
 // ============================================================
+let recentRenderSequence = 0;
+let historicalRenderSequence = 0;
 async function renderRecentChart() {
+  const sequence = ++recentRenderSequence;
+  const siteId = currentSite.id;
   const now = new Date();
   const start = new Date(now.getTime() - 3*24*60*60*1000);
-  const data = await fetchRangeFromDB(currentSite.id, start.toISOString(), now.toISOString());
+  const data = await fetchRangeFromDB(siteId, start.toISOString(), now.toISOString());
+  if (sequence !== recentRenderSequence || currentSite.id !== siteId) return;
   const title = document.getElementById('recent-range-title');
   const note = document.getElementById('recent-range-note');
   title.textContent = data.fallback_to_latest
@@ -1000,14 +998,17 @@ async function renderRecentChart() {
 }
 
 async function renderHistoricalChart(days) {
+  const sequence = ++historicalRenderSequence;
+  const siteId = currentSite.id;
   const now = new Date();
   const start = new Date(now.getTime() - days*24*60*60*1000);
-  const cacheKey = `${currentSite.id}-${days}`;
+  const cacheKey = `${siteId}-${days}`;
   let data = rangeCache[cacheKey];
   if (!data) {
-    data = await fetchRangeFromDB(currentSite.id, start.toISOString(), now.toISOString());
+    data = await fetchRangeFromDB(siteId, start.toISOString(), now.toISOString());
     rangeCache[cacheKey] = data;
   }
+  if (sequence !== historicalRenderSequence || currentSite.id !== siteId || days !== currentDays) return;
   const effectiveStart = new Date(data.effective_start || start);
   const effectiveEnd = new Date(data.effective_end || now);
   let visibleStart = new Date(data.data_start || effectiveStart);
@@ -1094,7 +1095,7 @@ function fillDailyTable(points, rangeMeta = {}) {
   const s = currentSite;
   const isDesign = currentScale === 'design' && !s.datumOffsetLocal;
   const conv = v => isDesign ? msl2design(v) : v;
-  const crest = s.designLevels.find(d => d.kind === 'crest');
+  const crest = designLevelsFor(s).find(d => d.kind === 'crest');
   const crestVal = s.datumOffsetLocal || !crest
     ? null
     : (isDesign ? crest.value : design2msl(crest.value));
@@ -1136,6 +1137,35 @@ function fillDailyTable(points, rangeMeta = {}) {
 // ============================================================
 // EVENT WIRING
 // ============================================================
+async function useSection(id) {
+  if (!currentSite.typicalSections?.some(section => section.id === id)) return;
+  currentSectionId = id;
+  renderKPIs();
+  renderCrossSection();
+  await Promise.all([renderRecentChart(), renderHistoricalChart(currentDays)]);
+}
+document.getElementById('typical-sections').addEventListener('change', e => {
+  if (e.target.id === 'typical-select') useSection(e.target.value).catch(console.error);
+});
+document.getElementById('typical-sections').addEventListener('click', e => {
+  const selectButton = e.target.closest('[data-use-section]');
+  if (selectButton) useSection(selectButton.dataset.useSection).catch(console.error);
+  const drawing = e.target.closest('[data-drawing]');
+  if (drawing) {
+    const dialog = document.getElementById('drawing-dialog');
+    const img = document.getElementById('drawing-image');
+    img.src = SamcoTypicalUI.safeAsset(drawing.dataset.drawing);
+    img.alt = drawing.dataset.title;
+    img.style.width = '100%';
+    document.getElementById('drawing-zoom').value = '100';
+    document.getElementById('drawing-title').textContent = drawing.dataset.title;
+    dialog.showModal();
+  }
+});
+document.getElementById('drawing-close').addEventListener('click', () => document.getElementById('drawing-dialog').close());
+document.getElementById('drawing-zoom').addEventListener('input', e => {
+  document.getElementById('drawing-image').style.width = `${Number(e.target.value)}%`;
+});
 document.getElementById('historical-tabs').addEventListener('click', async (e) => {
   if (e.target.tagName !== 'BUTTON') return;
   document.querySelectorAll('#historical-tabs button').forEach(b => b.classList.remove('active'));
@@ -1223,6 +1253,9 @@ async function loadSite({ refreshCharts = true, reason = 'manual' } = {}) {
   if (refreshCharts) rangeCache = {};
   try {
     renderWarningBanner();
+    // Drawings remain available when telemetry fails or a station has no readings.
+    renderSiteInfo();
+    renderCrossSection();
     const [reading, ingestion] = await Promise.all([
       fetchLatestReadingFromDB(siteId),
       fetchLatestIngestion().catch(error => {

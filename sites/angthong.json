@@ -3,39 +3,332 @@
   "name": "อ่างทอง (คลองบางแก้ว)",
   "projectRef": "SAMCO · เขื่อนป้องกันตลิ่งริมคลองบางแก้ว หมู่ 8 ต.บ้านอิฐ อ.เมือง จ.อ่างทอง (D680P08)",
   "lat": 14.598244,
-  "lng": 100.477570,
+  "lng": 100.47757,
   "mapsUrl": "https://www.google.com/maps?q=14.598244,100.477570",
   "river": "คลองบางแก้ว (สาขาแม่น้ำเจ้าพระยา)",
   "length_m": 379,
   "surveyDate": "24-09-2567",
-
   "datumOffset": 91.421,
   "datumOffsetSource": "GPS01 (สมมุติ 101.634 / MSL 10.213) + GPS02 (สมมุติ 100.000 / MSL 8.579) → offset 91.421 ตรงกัน spot-on ทั้ง 2 หมุด",
   "datumWarning": "แก้จากบันทึกก่อนหน้า — offset ที่ถูกคือ 91.421 (ไม่ใช่ 100.021). GPS01 สมมุติ +101.634 ตามที่บันทึกในตารางที่ 2 หน้าที่ 4 ของแบบ D680P08",
-
   "bmData": [
-    {"id": "GPS01", "msl": 10.213, "design": 101.634, "offset": 91.421, "verified": true},
-    {"id": "GPS02", "msl": 8.579,  "design": 100.000, "offset": 91.421, "verified": true},
-    {"id": "BM01",  "msl": null,   "design": 98.087,  "offset": null,   "verified": false, "note": "ไม่มีค่า MSL ในแบบ"},
-    {"id": "BM02",  "msl": null,   "design": 99.294,  "offset": null,   "verified": false, "note": "ไม่มีค่า MSL ในแบบ"}
+    {
+      "id": "GPS01",
+      "msl": 10.213,
+      "design": 101.634,
+      "offset": 91.421,
+      "verified": true
+    },
+    {
+      "id": "GPS02",
+      "msl": 8.579,
+      "design": 100,
+      "offset": 91.421,
+      "verified": true
+    },
+    {
+      "id": "BM01",
+      "msl": null,
+      "design": 98.087,
+      "offset": null,
+      "verified": false,
+      "note": "ไม่มีค่า MSL ในแบบ"
+    },
+    {
+      "id": "BM02",
+      "msl": null,
+      "design": 99.294,
+      "offset": null,
+      "verified": false,
+      "note": "ไม่มีค่า MSL ในแบบ"
+    }
   ],
-
   "designLevels": [
-    {"label": "ระดับสันเขื่อน", "value": 96.500, "color": "#fbbf24", "kind": "crest"},
-    {"label": "ระดับสันหินเรียง", "value": 95.500, "color": "#fb923c", "kind": "riprap"}
+    {
+      "label": "สันเขื่อน",
+      "value": 99,
+      "kind": "crest",
+      "color": "#fbbf24",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "crest",
+      "sectionId": "angthong-typical",
+      "source": {
+        "file": "อ่างทอง.pdf",
+        "pdf": "assets/typical/angthong.pdf",
+        "image": "assets/typical/angthong-page-1.jpg",
+        "page": 1,
+        "sheet": "17 / 29",
+        "drawingNo": "D680P08-17",
+        "drawingDate": "3-1-2568",
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "ff1b9bceafffb25f7d97d9da822063837f43a5cfecea1b70a055376d148a0fa7"
+      }
+    },
+    {
+      "label": "สันหินเรียง",
+      "value": 97,
+      "kind": "riprap",
+      "color": "#fb923c",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "stone-facing",
+      "sectionId": "angthong-typical",
+      "source": {
+        "file": "อ่างทอง.pdf",
+        "pdf": "assets/typical/angthong.pdf",
+        "image": "assets/typical/angthong-page-1.jpg",
+        "page": 1,
+        "sheet": "17 / 29",
+        "drawingNo": "D680P08-17",
+        "drawingDate": "3-1-2568",
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "ff1b9bceafffb25f7d97d9da822063837f43a5cfecea1b70a055376d148a0fa7"
+      }
+    },
+    {
+      "label": "สันหินทิ้ง",
+      "value": 92.6,
+      "kind": "riprap",
+      "color": "#fb923c",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "toe-riprap",
+      "sectionId": "angthong-typical",
+      "source": {
+        "file": "อ่างทอง.pdf",
+        "pdf": "assets/typical/angthong.pdf",
+        "image": "assets/typical/angthong-page-1.jpg",
+        "page": 1,
+        "sheet": "17 / 29",
+        "drawingNo": "D680P08-17",
+        "drawingDate": "3-1-2568",
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "ff1b9bceafffb25f7d97d9da822063837f43a5cfecea1b70a055376d148a0fa7"
+      }
+    }
   ],
-
   "referenceWaterLevels": [
-    {"label": "น้ำท่วมเฉลี่ย (2554)", "value": 95.424, "color": "#ef4444"},
-    {"label": "น้ำสูงสุดเฉลี่ย", "value": 94.958, "color": "#f97316"},
-    {"label": "น้ำต่ำสุดเฉลี่ย", "value": 90.711, "color": "#94a3c4"},
-    {"label": "น้ำขณะสำรวจ (24-09-2567)", "value": 93.869, "color": "#94a3c4"}
+    {
+      "label": "น้ำท่วมเฉลี่ย (2554)",
+      "value": 95.424,
+      "color": "#ef4444"
+    },
+    {
+      "label": "น้ำสูงสุดเฉลี่ย",
+      "value": 94.958,
+      "color": "#f97316"
+    },
+    {
+      "label": "น้ำต่ำสุดเฉลี่ย",
+      "value": 90.711,
+      "color": "#94a3c4"
+    },
+    {
+      "label": "น้ำขณะสำรวจ (24-09-2567)",
+      "value": 93.869,
+      "color": "#94a3c4"
+    }
   ],
-
   "stationId": 2626,
   "stationCode": "C.7A",
   "stationName": "บ้านบางแก้ว (แม่น้ำเจ้าพระยา)",
   "stationDistanceKm": 2.73,
   "stationBankMsl": 9.9,
-  "stationNote": "C.7A บ้านบางแก้ว บนแม่น้ำเจ้าพระยา 2.73 km จาก site — แต่ site อยู่บนคลองบางแก้ว (สาขา) ไม่ใช่เจ้าพระยาหลัก ระดับจริงจะต่ำกว่า C.7A ประมาณ 5-6 m"
+  "stationNote": "C.7A บ้านบางแก้ว บนแม่น้ำเจ้าพระยา 2.73 km จาก site — แต่ site อยู่บนคลองบางแก้ว (สาขา) ไม่ใช่เจ้าพระยาหลัก ระดับจริงจะต่ำกว่า C.7A ประมาณ 5-6 m",
+  "typicalSections": [
+    {
+      "id": "angthong-typical",
+      "name": "รูปตัดเขื่อนป้องกันตลิ่งทั่วไป",
+      "source": {
+        "file": "อ่างทอง.pdf",
+        "pdf": "assets/typical/angthong.pdf",
+        "image": "assets/typical/angthong-page-1.jpg",
+        "page": 1,
+        "sheet": "17 / 29",
+        "drawingNo": "D680P08-17",
+        "drawingDate": "3-1-2568",
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "ff1b9bceafffb25f7d97d9da822063837f43a5cfecea1b70a055376d148a0fa7"
+      },
+      "components": [
+        {
+          "id": "crest",
+          "label": "คาน GB1 / โครงสร้างสันเขื่อน",
+          "detail": "ตาม label GB1 ในภาพ; ขนาด/เหล็กดูแบบขยาย",
+          "levels": [
+            {
+              "label": "สันเขื่อน",
+              "value": 99,
+              "kind": "crest",
+              "color": "#fbbf24",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "แบบขยาย GB1",
+          "missing": ""
+        },
+        {
+          "id": "railing",
+          "label": "ราวกันตก",
+          "detail": "ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายราวกันตก",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "earth-fill",
+          "label": "ถมดินบดอัดแน่น",
+          "detail": "ปรับระดับเข้าหาดินเดิม; ดินถมต้องปราศจากเศษไม้ รากไม้ ขยะ หรืออินทรียวัตถุ",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "backfill-sand",
+          "label": "ทรายถมชุ่มน้ำอัดแน่นหลังแผง",
+          "detail": "วัสดุหลังแผงตาม leader line",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "back-geotextile",
+          "label": "แผ่นใยสังเคราะห์หลังแผง",
+          "detail": "ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายใยสังเคราะห์",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "panel",
+          "label": "แผงกรุ ค.ส.ล.",
+          "detail": "ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายแผงกรุ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "pile-a",
+          "label": "เสาเข็ม A",
+          "detail": "0.30×0.50×15.00 ม. @1.00 ม. ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายเสาเข็ม A",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "pile-b",
+          "label": "เสาเข็ม B",
+          "detail": "0.30×0.40×15.00 ม. @1.00 ม. ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายเสาเข็ม B",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "stone-facing",
+          "label": "หินเรียงลาดตลิ่ง",
+          "detail": "หินใหญ่ประมาณ 0.20–0.50 ม. หนา 0.50 ม.; แทรกโพรงด้วยหินเล็กให้แน่น",
+          "levels": [
+            {
+              "label": "สันหินเรียง",
+              "value": 97,
+              "kind": "riprap",
+              "color": "#fb923c",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "",
+          "missing": ""
+        },
+        {
+          "id": "stone-chinking",
+          "label": "หินเล็กแทรกโพรง",
+          "detail": "แทรกโพรงระหว่างหินเรียงให้แน่น",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "slope-geotextile",
+          "label": "แผ่นใยสังเคราะห์ใต้หินเรียง",
+          "detail": "ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายใยสังเคราะห์",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "slope-sand",
+          "label": "ทรายถมชุ่มน้ำอัดแน่นใต้ลาด",
+          "detail": "ชั้นรองลาดตามภาพ; หน้าตัดกำกับ 1.00 ม.",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "ground-cut",
+          "label": "แนวดินตัด",
+          "detail": "Slope 1:1 และ 1.5:1 ตามตำแหน่งในภาพ; ไม่กำหนด elevation จุดเดียว",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "toe-riprap",
+          "label": "หินทิ้งปลายลาด",
+          "detail": "หินใหญ่ขนาดไม่น้อยกว่า 0.35 ม.",
+          "levels": [
+            {
+              "label": "สันหินทิ้ง",
+              "value": 92.6,
+              "kind": "riprap",
+              "color": "#fb923c",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "",
+          "missing": ""
+        },
+        {
+          "id": "existing-ground",
+          "label": "แนวดินเดิม",
+          "detail": "อ้างเส้นดินเดิมในรูป",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        }
+      ],
+      "dimensions": [
+        "ด้านหลังสันเขื่อน 3.00 ม.; ด้านแม่น้ำ 2.00 ม.; ช่วงหินเรียง 11.00 ม.; ช่วงปลายลาด 1.50 ม.",
+        "Slope หินเรียง 2.5:1; หินทิ้งปลายลาด 1.5:1; ดินตัด 1:1 และ 1.5:1 ตามเส้นกำกับ",
+        "ชั้นทรายใต้ลาดกำกับ 1.00 ม.; ฐานแนวดินตัดกำกับ 1.00 ม.",
+        "มิติแนวดิ่งปลายลาด: ไม่น้อยกว่า 1.50 ม. และไม่น้อยกว่า 2.00 ม. ตามจุดปลายเส้นมิติในภาพ (ไม่ใช่ elevation)"
+      ],
+      "referenceWaterLevels": [
+        {
+          "label": "น้ำสูงสุดเฉลี่ย",
+          "value": 94.958,
+          "color": "#ef4444"
+        },
+        {
+          "label": "ระดับน้ำ +93.869 (label ในแบบซ้ำว่า น้ำสูงสุดเฉลี่ย)",
+          "value": 93.869,
+          "color": "#ef4444"
+        },
+        {
+          "label": "น้ำต่ำสุดเฉลี่ย",
+          "value": 90.711,
+          "color": "#94a3c4"
+        }
+      ],
+      "chainage": null,
+      "notes": [
+        "มิติและระดับสมมุติเป็นเมตร นอกจากระบุเป็นอย่างอื่น",
+        "รายการที่อ้างแบบขยาย/แบบมาตรฐานยังไม่มีแผ่นรายละเอียดแนบ; ห้ามเติมเหล็ก ระดับ หรือ spec จากการคาดเดา",
+        "ระดับดินเดิมเป็นเส้นอ้างอิงในภาพ ไม่ใช่ spot elevation ทุกตำแหน่ง",
+        "label ของ +93.869 ใน PDF ใช้คำว่าน้ำสูงสุดเฉลี่ยซ้ำ; config เดิมเรียกน้ำขณะสำรวจ ต้องแยกแหล่ง ไม่แก้ข้อความแบบให้ถูกเอง",
+        "ระดับชุดก่อน +96.500/+95.500 ถูกแทนด้วย PDF นี้ตามเจ้าของงานยืนยัน"
+      ]
+    }
+  ]
 }

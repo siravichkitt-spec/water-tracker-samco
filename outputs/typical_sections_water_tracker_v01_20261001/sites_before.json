@@ -1,0 +1,222 @@
+[
+  {
+    "id": "thachin-nakhonchaisi",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่ง — กรมโยธาฯ (67-NPT-S04)",
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 100
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินทิ้ง",
+        "value": 98
+      },
+      {
+        "kind": "pile",
+        "color": "#a78bfa",
+        "label": "เสาเข็มเสริมกำลังดิน +97",
+        "value": 97
+      },
+      {
+        "kind": "pile",
+        "color": "#a78bfa",
+        "label": "เสาเข็มเสริมกำลังดิน +96",
+        "value": 96
+      },
+      {
+        "kind": "pile",
+        "color": "#a78bfa",
+        "label": "เสาเข็มเสริมกำลังดิน +95",
+        "value": 95
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 99.5
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำเฉลี่ยสำรวจ",
+        "value": 97.9
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 96.6
+      }
+    ],
+    "alert_warn_design_level": "98.00",
+    "alert_crit_design_level": "100.00"
+  },
+  {
+    "id": "khoksalut-nan",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำน่าน หมู่ 5 — กรมโยธาฯ",
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 100.5
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินทิ้ง",
+        "value": 98
+      },
+      {
+        "kind": "pile",
+        "color": "#a78bfa",
+        "label": "หัวเสาเข็มเสริมกำลังดิน",
+        "value": 92.5
+      },
+      {
+        "kind": "riprap",
+        "color": "#94a3c4",
+        "label": "ระดับหินเรียง",
+        "value": 91.5
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 99.78
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำเฉลี่ยสำรวจ",
+        "value": 90.583
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 88.8
+      }
+    ],
+    "alert_warn_design_level": "98.00",
+    "alert_crit_design_level": "100.50"
+  },
+  {
+    "id": "angthong-bangkaew",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่งริมคลองบางแก้ว หมู่ 8 ต.บ้านอิฐ อ.เมือง จ.อ่างทอง (D680P08)",
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 96.5
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินเรียง",
+        "value": 95.5
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำท่วมเฉลี่ย (2554)",
+        "value": 95.424
+      },
+      {
+        "color": "#f97316",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 94.958
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำขณะสำรวจ (24-09-2567)",
+        "value": 93.869
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 90.711
+      }
+    ],
+    "alert_warn_design_level": "95.00",
+    "alert_crit_design_level": "96.50"
+  },
+  {
+    "id": "prachinburi",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำปราจีนบุรี ต.ศาลาลำดวน อ.เมือง จ.ปราจีนบุรี (68-PRJ-S7-01)",
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 100
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินเรียง",
+        "value": 97.5
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 99.515
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำเฉลี่ยสำรวจ (พ.ย. 2568)",
+        "value": 94.29
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 92.174
+      }
+    ],
+    "alert_warn_design_level": "97.50",
+    "alert_crit_design_level": "100.00"
+  },
+  {
+    "id": "buengkan-nam-hi",
+    "project_ref": "SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำฮี้ หมู่ 9 ต.ป่งไฮ อ.เซกา จ.บึงกาฬ (D670257)",
+    "design_levels": [
+      {
+        "kind": "crest",
+        "color": "#fbbf24",
+        "label": "ระดับสันเขื่อน",
+        "value": 100.5
+      },
+      {
+        "kind": "riprap",
+        "color": "#fb923c",
+        "label": "ระดับสันหินทิ้ง",
+        "value": 98.5
+      }
+    ],
+    "reference_water_levels": [
+      {
+        "color": "#ef4444",
+        "label": "น้ำสูงสุดเฉลี่ย",
+        "value": 99.8
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำขณะสำรวจ",
+        "value": 95.6
+      },
+      {
+        "color": "#94a3c4",
+        "label": "น้ำต่ำสุดเฉลี่ย",
+        "value": 93.8
+      }
+    ],
+    "alert_warn_design_level": null,
+    "alert_crit_design_level": "187.00"
+  }
+]

@@ -1,8 +1,8 @@
 # SAMCO Water Level Tracker — Operations Handoff
 
-**Version:** v4
+**Version:** v5 (typical sections)
 
-**Verified:** 2026-08-25
+**Verified:** 2026-10-01 (typical sections; ingestion implementation unchanged)
 
 **Entity:** SAMCO LOGISTICS — (ก) แพนสั่งได้เอง
 
@@ -10,6 +10,12 @@
 **GitHub:** https://github.com/siravichkitt-spec/water-tracker-samco
 
 ## Source of truth
+
+### Typical-section release
+
+Owner approved the new PDF set and confirmed the Prachinburi drawing belongs to the existing site. `water_tracker_sites.typical_sections` contains all six sections, 93 component records, 18 explicit levels, source references and hashes. The full review/recovery files are in `outputs/typical_sections_water_tracker_v01_20261001/`.
+
+Thachin has two distinct crests (100.000 and 99.200); Angthong's approved crest is 99.000, not the legacy 96.500. Critical thresholds use the lowest explicit crest for compatible-datum sites. Existing operational warning thresholds, all telemetry, gauges, coordinates and datum offsets are unchanged. Never treat @ pile spacing as a cut-off elevation. Never derive unknown component elevations from image pixels or pile length. Request the referenced standard/detail drawings to fill the missing fields.
 
 The water tracker is stored in the Supabase project named `samco-logistics`, project ref `yiyoagypmcnatdauuadf`, region `ap-northeast-2`. It is separate from the Supabase project named `samakee`.
 

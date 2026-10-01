@@ -1,52 +1,337 @@
 {
   "id": "prachinburi",
   "name": "ปราจีนบุรี",
-  "projectRef": "SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำปราจีนบุรี หมู่ที่ 4 บ้านบัวขาว — กรมโยธาฯ",
+  "projectRef": "SAMCO · เขื่อนป้องกันตลิ่งริมแม่น้ำปราจีนบุรี หมู่ 4 ต.หาดนางแก้ว อ.กบินทร์บุรี จ.ปราจีนบุรี (แบบ 68-PR03-SD-01)",
   "lat": 13.966917,
   "lng": 101.613333,
   "mapsUrl": "https://www.google.com/maps?q=13.966917,101.613333",
   "river": "แม่น้ำปราจีนบุรี",
-  "location": "หมู่ 4 บ้านบัวขาว จ.ปราจีนบุรี",
-  "projectCode": "68-PRJ-S7-01",
+  "location": "หมู่ 4 ต.หาดนางแก้ว อ.กบินทร์บุรี จ.ปราจีนบุรี (ตาม title block; เจ้าของงานยืนยัน site เดิม)",
+  "projectCode": "68-PR03-SD-01 (เลขแบบ)",
   "surveyDate": "พฤศจิกายน 2568",
-
-  "datumOffset": 91.000,
+  "datumOffset": 91,
   "datumOffsetSource": "9/10 BM หมุดตรงกัน 91.000 spot-on + WL อ้างอิง 2/3 ตรง — quality สูงสุดใน 5 sites",
   "datumWarning": "BM04 ให้ offset 91.133 (ต่าง 133mm) — น่าจะ typo, MSL ควรเป็น 8.597 ไม่ใช่ 8.464. WL สูงสุดเฉลี่ย MSL=1.703 ผิดชัด (offset 97.8) — ควรเป็น 8.515. แม่น้ำปราจีนไม่ tidal (ห่างจากอ่าวไทย ~110km ต้นน้ำ)",
-
   "bmData": [
-    {"id": "BM01",   "msl": 9.021, "design": 100.021, "offset": 91.000, "verified": true},
-    {"id": "BM02",   "msl": 9.017, "design": 100.017, "offset": 91.000, "verified": true},
-    {"id": "BM03",   "msl": 8.164, "design":  99.164, "offset": 91.000, "verified": true},
-    {"id": "BM04",   "msl": 8.464, "design":  99.597, "offset": 91.133, "verified": false, "note": "possible typo — MSL ควรเป็น 8.597"},
-    {"id": "BM05",   "msl": 8.370, "design":  99.370, "offset": 91.000, "verified": true},
-    {"id": "BM06",   "msl": 8.008, "design":  99.008, "offset": 91.000, "verified": true},
-    {"id": "TBM1",   "msl": 8.869, "design":  99.869, "offset": 91.000, "verified": true},
-    {"id": "TBM1/1", "msl": 8.257, "design":  99.257, "offset": 91.000, "verified": true},
-    {"id": "TBM2",   "msl": 7.981, "design":  98.981, "offset": 91.000, "verified": true},
-    {"id": "TBM3",   "msl": 8.676, "design":  99.687, "offset": 91.011, "verified": true}
+    {
+      "id": "BM01",
+      "msl": 9.021,
+      "design": 100.021,
+      "offset": 91,
+      "verified": true
+    },
+    {
+      "id": "BM02",
+      "msl": 9.017,
+      "design": 100.017,
+      "offset": 91,
+      "verified": true
+    },
+    {
+      "id": "BM03",
+      "msl": 8.164,
+      "design": 99.164,
+      "offset": 91,
+      "verified": true
+    },
+    {
+      "id": "BM04",
+      "msl": 8.464,
+      "design": 99.597,
+      "offset": 91.133,
+      "verified": false,
+      "note": "possible typo — MSL ควรเป็น 8.597"
+    },
+    {
+      "id": "BM05",
+      "msl": 8.37,
+      "design": 99.37,
+      "offset": 91,
+      "verified": true
+    },
+    {
+      "id": "BM06",
+      "msl": 8.008,
+      "design": 99.008,
+      "offset": 91,
+      "verified": true
+    },
+    {
+      "id": "TBM1",
+      "msl": 8.869,
+      "design": 99.869,
+      "offset": 91,
+      "verified": true
+    },
+    {
+      "id": "TBM1/1",
+      "msl": 8.257,
+      "design": 99.257,
+      "offset": 91,
+      "verified": true
+    },
+    {
+      "id": "TBM2",
+      "msl": 7.981,
+      "design": 98.981,
+      "offset": 91,
+      "verified": true
+    },
+    {
+      "id": "TBM3",
+      "msl": 8.676,
+      "design": 99.687,
+      "offset": 91.011,
+      "verified": true
+    }
   ],
-
   "designLevels": [
-    {"label": "ระดับสันเขื่อน", "value": 100.000, "color": "#fbbf24", "kind": "crest"},
-    {"label": "ระดับสันหินเรียง", "value": 97.500, "color": "#fb923c", "kind": "riprap"}
+    {
+      "label": "สันเขื่อน",
+      "value": 100,
+      "kind": "crest",
+      "color": "#fbbf24",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "crest",
+      "sectionId": "prachin-typical",
+      "source": {
+        "file": "บ้านบึงกาฬ ปราจีน.pdf",
+        "pdf": "assets/typical/prachinburi.pdf",
+        "image": "assets/typical/prachinburi-page-1.jpg",
+        "page": 1,
+        "sheet": "39 / 61",
+        "drawingNo": "68-PR03-SD-01",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "f2c39414a3554f357bf5931538ddb18ff504adaa6527c8f706075a7a0004b2aa"
+      }
+    },
+    {
+      "label": "สันหินทิ้ง",
+      "value": 97.5,
+      "kind": "riprap",
+      "color": "#fb923c",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "riprap",
+      "sectionId": "prachin-typical",
+      "source": {
+        "file": "บ้านบึงกาฬ ปราจีน.pdf",
+        "pdf": "assets/typical/prachinburi.pdf",
+        "image": "assets/typical/prachinburi-page-1.jpg",
+        "page": 1,
+        "sheet": "39 / 61",
+        "drawingNo": "68-PR03-SD-01",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "f2c39414a3554f357bf5931538ddb18ff504adaa6527c8f706075a7a0004b2aa"
+      }
+    }
   ],
-
   "referenceWaterLevels": [
-    {"label": "น้ำสูงสุดเฉลี่ย", "value": 99.515, "color": "#ef4444"},
-    {"label": "น้ำเฉลี่ยสำรวจ (พ.ย. 2568)", "value": 94.290, "color": "#94a3c4"},
-    {"label": "น้ำต่ำสุดเฉลี่ย", "value": 92.174, "color": "#94a3c4"}
+    {
+      "label": "น้ำสูงสุดเฉลี่ย",
+      "value": 99.515,
+      "color": "#ef4444"
+    },
+    {
+      "label": "น้ำเฉลี่ยสำรวจ (พ.ย. 2568)",
+      "value": 94.29,
+      "color": "#94a3c4"
+    },
+    {
+      "label": "น้ำต่ำสุดเฉลี่ย",
+      "value": 92.174,
+      "color": "#94a3c4"
+    }
   ],
-
   "pileInfo": {
-    "typeA": "0.30×0.50×11.00 ม. cut-off +1.00",
-    "typeB": "0.30×0.40×11.00 ม. cut-off +1.00"
+    "typeA": "0.30×0.50×11.00 ม. @1.00 ม. (ระยะห่าง ไม่ใช่ cut-off)",
+    "typeB": "0.30×0.40×11.00 ม. @1.00 ม."
   },
-
   "stationId": 2680,
   "stationCode": "Kgt.3",
   "stationName": "สะพานต้นน้ำบางปะกง (กบินทร์บุรี)",
   "stationDistanceKm": 10.17,
   "stationBankMsl": 8.79,
-  "stationNote": "Kgt.3 สะพานต้นน้ำบางปะกง 10 km เหนือ site. Sanity check: WL max design +99.515 = MSL +8.515 vs Kgt.3 bank +8.79 = ต่าง 27cm — แม่นมาก"
+  "stationNote": "Kgt.3 สะพานต้นน้ำบางปะกง 10 km เหนือ site. Sanity check: WL max design +99.515 = MSL +8.515 vs Kgt.3 bank +8.79 = ต่าง 27cm — แม่นมาก",
+  "typicalSections": [
+    {
+      "id": "prachin-typical",
+      "name": "รูปตัดเขื่อนป้องกันตลิ่งทั่วไป",
+      "source": {
+        "file": "บ้านบึงกาฬ ปราจีน.pdf",
+        "pdf": "assets/typical/prachinburi.pdf",
+        "image": "assets/typical/prachinburi-page-1.jpg",
+        "page": 1,
+        "sheet": "39 / 61",
+        "drawingNo": "68-PR03-SD-01",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "f2c39414a3554f357bf5931538ddb18ff504adaa6527c8f706075a7a0004b2aa"
+      },
+      "components": [
+        {
+          "id": "crest",
+          "label": "คาน GB1 / โครงสร้างสันเขื่อน",
+          "detail": "ตาม label GB1; ความหนาในรูป 0.50 ม.; เหล็กดูแบบขยาย",
+          "levels": [
+            {
+              "label": "สันเขื่อน",
+              "value": 100,
+              "kind": "crest",
+              "color": "#fbbf24",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "แบบขยาย GB1",
+          "missing": ""
+        },
+        {
+          "id": "drain-chamber",
+          "label": "บ่อพัก ค.ส.ล.",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานบ่อพัก",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "drain-gutter",
+          "label": "รางระบายน้ำ",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานรางระบายน้ำ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "drain-pipe",
+          "label": "ท่อระบายน้ำ",
+          "detail": "ตามแบบมาตรฐาน; ขนาด/ระดับท้องท่อ [ต้องกรอก]",
+          "levels": [],
+          "reference": "แบบมาตรฐานท่อระบายน้ำ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "railing",
+          "label": "ราวกันตก",
+          "detail": "ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายราวกันตก",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "s0",
+          "label": "พื้น S0",
+          "detail": "ตามตำแหน่ง label; ขนาด/เหล็ก [ต้องกรอก]",
+          "levels": [],
+          "reference": "แบบขยายพื้น S0",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "earth-fill",
+          "label": "ดินถมอัดแน่น",
+          "detail": "ปรับระดับเข้าหาดินเดิม; ดินถมต้องปราศจากเศษไม้ รากไม้ ขยะ หรืออินทรียวัตถุ",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "sand",
+          "label": "ทรายถมชุ่มน้ำอัดแน่น",
+          "detail": "วัสดุหลังแผงตาม leader line",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "geotextile",
+          "label": "แผ่นใยสังเคราะห์",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานใยสังเคราะห์",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "panel",
+          "label": "แผงกรุ ค.ส.ล.",
+          "detail": "ตามแบบมาตรฐาน; ขอบบน/ล่าง [ต้องกรอก]",
+          "levels": [],
+          "reference": "แบบมาตรฐานแผงกรุ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "pile-a",
+          "label": "เสาเข็ม A",
+          "detail": "0.30×0.50×11.00 ม. @1.00 ม. ดูแบบขยาย; @ ไม่ใช่ cut-off",
+          "levels": [],
+          "reference": "แบบขยายเสาเข็ม A",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "pile-b",
+          "label": "เสาเข็ม B",
+          "detail": "0.30×0.40×11.00 ม. @1.00 ม. ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายเสาเข็ม B",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "existing-ground",
+          "label": "แนวดินเดิม",
+          "detail": "ตามเส้นดินเดิมในรูป; ระดับตาม กม. [ต้องกรอก]",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "riprap",
+          "label": "หินทิ้งลาดตลิ่ง",
+          "detail": "หินใหญ่ขนาดไม่น้อยกว่า 0.35 ม.; ความหนาแนวราบต้นลาดกำกับ 1.00 ม.; slope 1:1.5",
+          "levels": [
+            {
+              "label": "สันหินทิ้ง",
+              "value": 97.5,
+              "kind": "riprap",
+              "color": "#fb923c",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "",
+          "missing": ""
+        }
+      ],
+      "dimensions": [
+        "ด้านหลังแนวสันเขื่อน 2.50 ม.; ด้านแม่น้ำ 2.00 ม.",
+        "มิติย่อย 0.50, 0.40, 1.70, 0.40 ม. ตามเส้นมิติ; ระดับสันเขื่อนถึงสันหินทิ้งกำกับ 2.50 ม.",
+        "GB1 หนา 0.50 ม.; หินต้นลาดมิติ 1.00 ม.; slope 1:1.5"
+      ],
+      "referenceWaterLevels": [
+        {
+          "label": "น้ำสูงสุดเฉลี่ย",
+          "value": 99.515,
+          "color": "#ef4444"
+        },
+        {
+          "label": "น้ำขณะสำรวจ",
+          "value": 94.29,
+          "color": "#94a3c4"
+        },
+        {
+          "label": "น้ำต่ำสุดเฉลี่ย",
+          "value": 92.174,
+          "color": "#94a3c4"
+        }
+      ],
+      "chainage": null,
+      "notes": [
+        "มิติและระดับสมมุติเป็นเมตร นอกจากระบุเป็นอย่างอื่น",
+        "รายการที่อ้างแบบขยาย/แบบมาตรฐานยังไม่มีแผ่นรายละเอียดแนบ; ห้ามเติมเหล็ก ระดับ หรือ spec จากการคาดเดา",
+        "ระดับดินเดิมเป็นเส้นอ้างอิงในภาพ ไม่ใช่ spot elevation ทุกตำแหน่ง",
+        "เจ้าของงานยืนยัน PDF นี้เป็นงานปราจีนเดิมใน app; แก้ชื่อสถานที่ตาม title block เป็น ต.หาดนางแก้ว อ.กบินทร์บุรี โดยไม่เปลี่ยน gauge/พิกัด/datum ที่ยังไม่มีหลักฐานใหม่",
+        "หมายเหตุเรื่องราวกันตกหลังแผง/โครงสร้างประกอบ: ตรวจสภาพจริงและการเปลี่ยนแปลงตามกระบวนการอนุมัติแบบในต้นฉบับ"
+      ]
+    }
+  ]
 }

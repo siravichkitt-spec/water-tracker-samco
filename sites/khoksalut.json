@@ -9,42 +9,434 @@
   "location": "ต.โคกสลุด อ.บางกระทุ่ม จ.พิษณุโลก",
   "lengthMeters": 680,
   "constructionYear": 2568,
-
   "datumOffset": 59.777,
   "datumOffsetSource": "BM-1/BM-2/BM-3 + GPS-NAN2-V06-1/V06-2 ทั้ง 5 หมุด offset ตรงกัน 59.7770 (spread 0mm) + WL ทั้ง 3 ตรวจ ✓",
   "datumWarning": "Offset สะอาด 8 จุด verified ทั้งหมด. Tidal lag ไม่มี (น่านเป็นแม่น้ำใน — ไม่ใช่แม่น้ำที่ทะเลขึ้น). ต้อง verify กับ staff gauge site จริงก่อน production",
-
   "bmData": [
-    {"id": "GPS-NAN2-V06-1", "msl": 40.223, "design": 100.000},
-    {"id": "GPS-NAN2-V06-2", "msl": 40.342, "design": 100.119},
-    {"id": "BM-1", "msl": 39.926, "design": 99.703},
-    {"id": "BM-2", "msl": 40.046, "design": 99.823},
-    {"id": "BM-3", "msl": 39.885, "design": 99.662}
+    {
+      "id": "GPS-NAN2-V06-1",
+      "msl": 40.223,
+      "design": 100
+    },
+    {
+      "id": "GPS-NAN2-V06-2",
+      "msl": 40.342,
+      "design": 100.119
+    },
+    {
+      "id": "BM-1",
+      "msl": 39.926,
+      "design": 99.703
+    },
+    {
+      "id": "BM-2",
+      "msl": 40.046,
+      "design": 99.823
+    },
+    {
+      "id": "BM-3",
+      "msl": 39.885,
+      "design": 99.662
+    }
   ],
-
   "designLevels": [
-    {"label": "ระดับสันเขื่อน", "value": 100.50, "color": "#fbbf24", "kind": "crest"},
-    {"label": "ระดับสันหินทิ้ง", "value": 98.00, "color": "#fb923c", "kind": "riprap"},
-    {"label": "หัวเสาเข็มเสริมกำลังดิน", "value": 92.50, "color": "#a78bfa", "kind": "pile"},
-    {"label": "ระดับหินเรียง", "value": 91.50, "color": "#94a3c4", "kind": "riprap"}
+    {
+      "label": "สันเขื่อน",
+      "value": 100.5,
+      "kind": "crest",
+      "color": "#fbbf24",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "crest",
+      "sectionId": "nan-typical",
+      "source": {
+        "file": "เเม่นำ้น่าน พิษณุโลก.pdf",
+        "pdf": "assets/typical/nan.pdf",
+        "image": "assets/typical/nan-page-1.jpg",
+        "page": 1,
+        "sheet": "23 / 48",
+        "drawingNo": "NAN2-V06-SD-01R1",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "20f5aba3227858e10620cabfec0d3645aa21f10df2be9c5ec3b6eced8ad214c6"
+      }
+    },
+    {
+      "label": "สันหินเรียง",
+      "value": 98,
+      "kind": "riprap",
+      "color": "#fb923c",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "stone-facing",
+      "sectionId": "nan-typical",
+      "source": {
+        "file": "เเม่นำ้น่าน พิษณุโลก.pdf",
+        "pdf": "assets/typical/nan.pdf",
+        "image": "assets/typical/nan-page-1.jpg",
+        "page": 1,
+        "sheet": "23 / 48",
+        "drawingNo": "NAN2-V06-SD-01R1",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "20f5aba3227858e10620cabfec0d3645aa21f10df2be9c5ec3b6eced8ad214c6"
+      }
+    },
+    {
+      "label": "หัวเสาเข็มเสริมกำลังดิน",
+      "value": 92.5,
+      "kind": "pile",
+      "color": "#a78bfa",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "pile-d",
+      "sectionId": "nan-typical",
+      "source": {
+        "file": "เเม่นำ้น่าน พิษณุโลก.pdf",
+        "pdf": "assets/typical/nan.pdf",
+        "image": "assets/typical/nan-page-1.jpg",
+        "page": 1,
+        "sheet": "23 / 48",
+        "drawingNo": "NAN2-V06-SD-01R1",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "20f5aba3227858e10620cabfec0d3645aa21f10df2be9c5ec3b6eced8ad214c6"
+      }
+    },
+    {
+      "label": "สันหินทิ้ง",
+      "value": 91.5,
+      "kind": "riprap",
+      "color": "#fb923c",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "toe-riprap",
+      "sectionId": "nan-typical",
+      "source": {
+        "file": "เเม่นำ้น่าน พิษณุโลก.pdf",
+        "pdf": "assets/typical/nan.pdf",
+        "image": "assets/typical/nan-page-1.jpg",
+        "page": 1,
+        "sheet": "23 / 48",
+        "drawingNo": "NAN2-V06-SD-01R1",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "20f5aba3227858e10620cabfec0d3645aa21f10df2be9c5ec3b6eced8ad214c6"
+      }
+    }
   ],
-
   "referenceWaterLevels": [
-    {"label": "น้ำสูงสุดเฉลี่ย", "value": 99.780, "color": "#ef4444"},
-    {"label": "น้ำเฉลี่ยสำรวจ", "value": 90.583, "color": "#94a3c4"},
-    {"label": "น้ำต่ำสุดเฉลี่ย", "value": 88.800, "color": "#94a3c4"}
+    {
+      "label": "น้ำสูงสุดเฉลี่ย",
+      "value": 99.78,
+      "color": "#ef4444"
+    },
+    {
+      "label": "น้ำเฉลี่ยสำรวจ",
+      "value": 90.583,
+      "color": "#94a3c4"
+    },
+    {
+      "label": "น้ำต่ำสุดเฉลี่ย",
+      "value": 88.8,
+      "color": "#94a3c4"
+    }
   ],
-
   "pileInfo": {
     "typeA": "0.30×0.50×17.00 ม. คอนกรีตอัดแรง (ตามแบบมาตรฐาน)",
     "typeB": "0.30×0.40×17.00 ม. คอนกรีตอัดแรง (ตามแบบมาตรฐาน)",
     "soilNail": "ค.ธ.ร. 0.26×0.26×9.00 ม. (เสาเข็มเสริมกำลังดิน 5 แถว × spacing 1.20 ม. × 4.60 ม.)"
   },
-
   "stationId": 667,
   "stationCode": "NAN006",
   "stationName": "บางกระทุ่ม (แม่น้ำน่าน)",
   "stationDistanceKm": 0.78,
   "stationBankMsl": 39.86,
-  "stationNote": "NAN006 บางกระทุ่ม ห่างเพียง 0.78 km — quality สูงสุดใน 5 sites. Non-tidal river"
+  "stationNote": "NAN006 บางกระทุ่ม ห่างเพียง 0.78 km — quality สูงสุดใน 5 sites. Non-tidal river",
+  "typicalSections": [
+    {
+      "id": "nan-typical",
+      "name": "รูปตัดทั่วไป + แปลนเสาเข็มเสริมกำลังดิน",
+      "source": {
+        "file": "เเม่นำ้น่าน พิษณุโลก.pdf",
+        "pdf": "assets/typical/nan.pdf",
+        "image": "assets/typical/nan-page-1.jpg",
+        "page": 1,
+        "sheet": "23 / 48",
+        "drawingNo": "NAN2-V06-SD-01R1",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "20f5aba3227858e10620cabfec0d3645aa21f10df2be9c5ec3b6eced8ad214c6"
+      },
+      "components": [
+        {
+          "id": "crest",
+          "label": "โครงสร้างสันเขื่อน",
+          "detail": "ระดับผิวบนตามลูกศรสันเขื่อน",
+          "levels": [
+            {
+              "label": "สันเขื่อน",
+              "value": 100.5,
+              "kind": "crest",
+              "color": "#fbbf24",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "",
+          "missing": ""
+        },
+        {
+          "id": "footpath",
+          "label": "พื้นทางเท้า ค.ส.ล.",
+          "detail": "ตาม callout ด้านหลังแนวสันเขื่อน; เหล็ก/ความหนา [ต้องกรอก]",
+          "levels": [],
+          "reference": "แบบมาตรฐานพื้นทางเท้า",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "drain-chamber",
+          "label": "บ่อพัก ค.ส.ล.",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานบ่อพัก",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "drain-gutter",
+          "label": "รางระบายน้ำ",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานรางระบายน้ำ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "drain-pipe",
+          "label": "ท่อระบายน้ำ",
+          "detail": "ตามแบบมาตรฐาน; ขนาด/ระดับท้องท่อ [ต้องกรอก]",
+          "levels": [],
+          "reference": "แบบมาตรฐานท่อระบายน้ำ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "railing",
+          "label": "ราวกันตก",
+          "detail": "ตามแบบมาตรฐาน (เว้นช่องบริเวณบันได)",
+          "levels": [],
+          "reference": "แบบมาตรฐานราวกันตก/บันได",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "stairs",
+          "label": "ช่องบันได",
+          "detail": "อ้างในหมายเหตุราวกันตก; รูปตัดบันไดไม่ได้แสดงใน PDF นี้",
+          "levels": [],
+          "reference": "แบบขยายบันได",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "s0",
+          "label": "พื้น S0 / ช่องระบายน้ำ",
+          "detail": "ขนาด 1.00×1.00×0.10 ม.; callout ชี้ข้างช่องระบายน้ำ",
+          "levels": [],
+          "reference": "แบบขยายพื้น S0",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "earth-fill",
+          "label": "ดินถมอัดแน่น",
+          "detail": "ปรับระดับเข้าหาดินเดิม; ห้ามเศษไม้ รากไม้ ขยะ หรืออินทรียวัตถุ",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "backfill-sand",
+          "label": "ทรายถมชุ่มน้ำอัดแน่นหลังแผง",
+          "detail": "หน้าตัดหลังแผงตาม leader line",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "panel",
+          "label": "แผงกรุ ค.ส.ล.",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานแผงกรุ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "back-geotextile",
+          "label": "แผ่นใยสังเคราะห์หลังแผง",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานใยสังเคราะห์",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "pile-a",
+          "label": "เสาเข็ม A",
+          "detail": "0.30×0.50×17.00 ม. @1.00 ม. ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานเสาเข็ม A",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "pile-b",
+          "label": "เสาเข็ม B",
+          "detail": "0.30×0.40×17.00 ม. @1.00 ม. ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานเสาเข็ม B",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "stone-facing",
+          "label": "หินเรียงลาดตลิ่ง",
+          "detail": "หินใหญ่ประมาณ 0.20–0.50 ม. หนา 0.50 ม.; แทรกโพรงด้วยหินเล็กให้แน่น",
+          "levels": [
+            {
+              "label": "สันหินเรียง",
+              "value": 98,
+              "kind": "riprap",
+              "color": "#fb923c",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "",
+          "missing": ""
+        },
+        {
+          "id": "stone-chinking",
+          "label": "หินเล็กแทรกโพรง",
+          "detail": "แทรกโพรงระหว่างหินเรียงให้แน่น",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "slope-sand",
+          "label": "ทรายถมชุ่มน้ำอัดแน่นใต้ลาด",
+          "detail": "หนาไม่น้อยกว่า 1.00 ม. ตามเส้นมิติ",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "slope-geotextile",
+          "label": "แผ่นใยสังเคราะห์ก่อนเรียงหิน",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานใยสังเคราะห์",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "ground-cut",
+          "label": "แนวดินตัด",
+          "detail": "ตามเส้นแนวดินตัดในรูป; ไม่กำหนดระดับจุดเดียว",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "pile-d",
+          "label": "เสาเข็ม ค.อ.ร. D เสริมกำลังดิน",
+          "detail": "0.26×0.26 ม.; ความยาวแยกช่วงตามตาราง; แปลนแสดง spacing 1.20 ม. และ 1.00 ม. ตามแต่ละทิศ",
+          "levels": [
+            {
+              "label": "หัวเสาเข็มเสริมกำลังดิน",
+              "value": 92.5,
+              "kind": "pile",
+              "color": "#a78bfa",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "แบบมาตรฐานเสาเข็ม D",
+          "missing": ""
+        },
+        {
+          "id": "toe-riprap",
+          "label": "หินทิ้งปลายลาด",
+          "detail": "หนาไม่น้อยกว่า 1.00 ม.",
+          "levels": [
+            {
+              "label": "สันหินทิ้ง",
+              "value": 91.5,
+              "kind": "riprap",
+              "color": "#fb923c",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "",
+          "missing": ""
+        },
+        {
+          "id": "mattress",
+          "label": "กล่องลวดตาข่ายแมทเทรส",
+          "detail": "2.00×6.00×0.30 ม.; บรรจุหินให้แน่นเต็มกล่อง",
+          "levels": [],
+          "reference": "แบบขยายกล่องแมทเทรส",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "mattress-stone",
+          "label": "หินบรรจุกล่องแมทเทรส",
+          "detail": "บรรจุหินให้แน่นเต็มกล่อง; gradation [ต้องกรอก]",
+          "levels": [],
+          "reference": "แบบขยายกล่องแมทเทรส",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "existing-ground",
+          "label": "แนวดินเดิม",
+          "detail": "รูปตัดและตำแหน่งแนวลาดอ้างตามภาพต้นฉบับ",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        }
+      ],
+      "dimensions": [
+        "ด้านหลังแนวสันเขื่อน 3.00 ม.; ด้านแม่น้ำ 2.00 ม.; ช่วงลาด 16.25 ม.; ช่วงปลายลาด 1.50 ม.; แมทเทรสยาวในรูป 6.00 ม.",
+        "ระยะด้านล่างบริเวณแนว A–B 2.20 ม.; ถึงแนวเสริมกำลังดิน 4.60 ม.; offset เริ่มแนวเข็ม 0.50 ม.",
+        "แปลน D แสดงระยะขวาง 1.20 ม. และตามแนวอีกทิศ 1.00 ม.; ห้ามแทนทุกทิศด้วย @ เดียว",
+        "Slope หินเรียง 2.5:1; ดินตัด 1:1; แนวใต้ลาดที่กำกับ 1:1.5; แนวหลังเขื่อนกำกับ 1.5:1",
+        "มิติหน้าตัดหลังแผงที่กำกับ 1.00 ม.; หินทิ้ง/ทรายใต้ลาดหนาไม่น้อยกว่า 1.00 ม."
+      ],
+      "referenceWaterLevels": [
+        {
+          "label": "น้ำสูงสุดเฉลี่ย",
+          "value": 99.78,
+          "color": "#ef4444"
+        },
+        {
+          "label": "น้ำขณะสำรวจ",
+          "value": 90.583,
+          "color": "#94a3c4"
+        },
+        {
+          "label": "น้ำต่ำสุดเฉลี่ย",
+          "value": 88.8,
+          "color": "#94a3c4"
+        }
+      ],
+      "chainage": null,
+      "notes": [
+        "มิติและระดับสมมุติเป็นเมตร นอกจากระบุเป็นอย่างอื่น",
+        "รายการที่อ้างแบบขยาย/แบบมาตรฐานยังไม่มีแผ่นรายละเอียดแนบ; ห้ามเติมเหล็ก ระดับ หรือ spec จากการคาดเดา",
+        "ระดับดินเดิมเป็นเส้นอ้างอิงในภาพ ไม่ใช่ spot elevation ทุกตำแหน่ง"
+      ],
+      "variants": [
+        {
+          "name": "เสาเข็ม D ช่วง กม. 0+000–0+080",
+          "chainage": "0+000–0+080",
+          "detail": "ความยาวเสาเข็ม D = 8.00 ม. ตามตารางในแผ่น 23"
+        },
+        {
+          "name": "เสาเข็ม D ช่วง กม. 0+081–0+700",
+          "chainage": "0+081–0+700",
+          "detail": "ความยาวเสาเข็ม D = 9.00 ม. ตามตารางในแผ่น 23"
+        }
+      ]
+    }
+  ]
 }

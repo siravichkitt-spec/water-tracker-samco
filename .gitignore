@@ -5,4 +5,5 @@ node_modules
 .playwright-cli/
 artifact_work/
 output/
+supabase/.temp/
 outputs/**/*.inspect.ndjson

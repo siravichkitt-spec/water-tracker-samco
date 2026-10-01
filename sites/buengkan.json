@@ -7,35 +7,273 @@
   "mapsUrl": "https://www.google.com/maps?q=18.011223,103.872809",
   "river": "แม่น้ำฮี้ (สาขาแม่น้ำสงคราม → โขง)",
   "length_m": 1205,
-
-  "datumOffset": 0.000,
+  "datumOffset": 0,
   "datumOffsetLocal": true,
   "datumOffsetSource": "แบบใช้ local datum อ้าง 66-BK04-1 = 100.600 ม. (แบบเดิม ปีงบประมาณ 2567) — ไม่ใช่ MSL สากล",
   "datumWarning": "⚠️ site อยู่บนแม่น้ำฮี้ (สาขาน้ำสงคราม) ไม่ใช่แม่น้ำโขงตัวเอง. ค่าใน 'สมมุติ' = local datum. ThaiWater TKS.121 บ้านป่งไฮ (ตำบลเดียวกัน 5.6 km) รายงาน WL ปัจจุบัน ~185 mMSL → offset จริง ≈ 85-87 m ระหว่าง design กับ MSL. ต้อง cross-check ที่ site ก่อนใช้ overlay",
-
   "bmData": [
-    {"id": "GPS-01-BK04-1", "design": 100.600, "verified": "อ้างจากแบบเดิม"},
-    {"id": "GPS-02-BK04-2", "design": 100.000, "verified": true},
-    {"id": "BM-1",  "design": 99.405,  "verified": true},
-    {"id": "BM-2",  "design": 102.087, "verified": true}
+    {
+      "id": "GPS-01-BK04-1",
+      "design": 100.6,
+      "verified": "อ้างจากแบบเดิม"
+    },
+    {
+      "id": "GPS-02-BK04-2",
+      "design": 100,
+      "verified": true
+    },
+    {
+      "id": "BM-1",
+      "design": 99.405,
+      "verified": true
+    },
+    {
+      "id": "BM-2",
+      "design": 102.087,
+      "verified": true
+    }
   ],
-
   "designLevels": [
-    {"label": "ระดับสันเขื่อน", "value": 100.50, "color": "#fbbf24", "kind": "crest"},
-    {"label": "ระดับสันหินทิ้ง", "value": 98.50, "color": "#fb923c", "kind": "riprap"}
+    {
+      "label": "สันเขื่อน",
+      "value": 100.5,
+      "kind": "crest",
+      "color": "#fbbf24",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "crest",
+      "sectionId": "buengkan-typical",
+      "source": {
+        "file": "เเม่นำ้ฮี้ บึงกาฬ.pdf",
+        "pdf": "assets/typical/buengkan.pdf",
+        "image": "assets/typical/buengkan-page-1.jpg",
+        "page": 1,
+        "sheet": "17 / 65",
+        "drawingNo": "D670257 (เลขท้ายแผ่นอ่านไม่ชัด)",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "dc50d561a3aa1b922501f380e50b22231aa9a5277b6bf56aaff50bbcd5281c9d"
+      }
+    },
+    {
+      "label": "สันหินทิ้ง",
+      "value": 98.5,
+      "kind": "riprap",
+      "color": "#fb923c",
+      "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF",
+      "componentId": "riprap",
+      "sectionId": "buengkan-typical",
+      "source": {
+        "file": "เเม่นำ้ฮี้ บึงกาฬ.pdf",
+        "pdf": "assets/typical/buengkan.pdf",
+        "image": "assets/typical/buengkan-page-1.jpg",
+        "page": 1,
+        "sheet": "17 / 65",
+        "drawingNo": "D670257 (เลขท้ายแผ่นอ่านไม่ชัด)",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "dc50d561a3aa1b922501f380e50b22231aa9a5277b6bf56aaff50bbcd5281c9d"
+      }
+    }
   ],
-
   "referenceWaterLevels": [
-    {"label": "น้ำสูงสุดเฉลี่ย", "value": 99.800, "color": "#ef4444"},
-    {"label": "น้ำต่ำสุดเฉลี่ย", "value": 93.800, "color": "#94a3c4"},
-    {"label": "น้ำขณะสำรวจ", "value": 95.600, "color": "#94a3c4"}
+    {
+      "label": "น้ำสูงสุดเฉลี่ย",
+      "value": 99.8,
+      "color": "#ef4444"
+    },
+    {
+      "label": "น้ำต่ำสุดเฉลี่ย",
+      "value": 93.8,
+      "color": "#94a3c4"
+    },
+    {
+      "label": "น้ำขณะสำรวจ",
+      "value": 95.6,
+      "color": "#94a3c4"
+    }
   ],
-
   "stationId": 11688687,
   "stationCode": "TKS.121",
   "stationName": "บ้านป่งไฮ (RID hydro)",
   "stationDistanceKm": 5.6,
   "stationBankMsl": null,
   "stationCriticalMsl": 187,
-  "stationNote": "TKS.121 บ้านป่งไฮ ต.ป่งไฮ อ.เซกา จ.บึงกาฬ — ตำบลเดียวกันเป๊ะกับ site ที่เพียง 5.6 km. WL ปัจจุบัน 185.53 mMSL. Critical level 187 mMSL. ⚠️ ข้อมูล ThaiWater เป็นสเกล MSL แต่แบบใช้ local datum — ต้องแสดงแยกกัน + banner เตือน"
+  "stationNote": "TKS.121 บ้านป่งไฮ ต.ป่งไฮ อ.เซกา จ.บึงกาฬ — ตำบลเดียวกันเป๊ะกับ site ที่เพียง 5.6 km. WL ปัจจุบัน 185.53 mMSL. Critical level 187 mMSL. ⚠️ ข้อมูล ThaiWater เป็นสเกล MSL แต่แบบใช้ local datum — ต้องแสดงแยกกัน + banner เตือน",
+  "typicalSections": [
+    {
+      "id": "buengkan-typical",
+      "name": "รูปตัดเขื่อนป้องกันตลิ่งทั่วไป",
+      "source": {
+        "file": "เเม่นำ้ฮี้ บึงกาฬ.pdf",
+        "pdf": "assets/typical/buengkan.pdf",
+        "image": "assets/typical/buengkan-page-1.jpg",
+        "page": 1,
+        "sheet": "17 / 65",
+        "drawingNo": "D670257 (เลขท้ายแผ่นอ่านไม่ชัด)",
+        "drawingDate": null,
+        "reviewedAt": "2026-10-01",
+        "revisionStatus": "เจ้าของงานยืนยันให้ใช้ไฟล์ชุดนี้เป็นแบบหลัก 2026-10-01",
+        "sha256": "dc50d561a3aa1b922501f380e50b22231aa9a5277b6bf56aaff50bbcd5281c9d"
+      },
+      "components": [
+        {
+          "id": "crest",
+          "label": "คาน GB1 / โครงสร้างสันเขื่อน",
+          "detail": "ตาม label GB1; ความหนาในรูป 0.50 ม.; เหล็กดูแบบขยาย",
+          "levels": [
+            {
+              "label": "สันเขื่อน",
+              "value": 100.5,
+              "kind": "crest",
+              "color": "#fbbf24",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "แบบขยาย GB1",
+          "missing": ""
+        },
+        {
+          "id": "drain-chamber",
+          "label": "บ่อพัก ค.ส.ล.",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานบ่อพัก",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "drain-gutter",
+          "label": "รางระบายน้ำ",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานรางระบายน้ำ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "drain-pipe",
+          "label": "ท่อระบายน้ำ",
+          "detail": "ตามแบบมาตรฐาน; ขนาด/ระดับท้องท่อ [ต้องกรอก]",
+          "levels": [],
+          "reference": "แบบมาตรฐานท่อระบายน้ำ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "railing",
+          "label": "ราวกันตก",
+          "detail": "ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายราวกันตก",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "s0",
+          "label": "พื้น S0",
+          "detail": "ตามตำแหน่ง label; ขนาด/เหล็ก [ต้องกรอก]",
+          "levels": [],
+          "reference": "แบบขยายพื้น S0",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "earth-fill",
+          "label": "ดินถมอัดแน่น",
+          "detail": "ปรับระดับเข้าหาดินเดิม; ดินถมต้องปราศจากเศษไม้ รากไม้ ขยะ หรืออินทรียวัตถุ",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "sand",
+          "label": "ทรายถมชุ่มน้ำอัดแน่น",
+          "detail": "วัสดุหลังแผงตาม leader line",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "geotextile",
+          "label": "แผ่นใยสังเคราะห์",
+          "detail": "ตามแบบมาตรฐาน",
+          "levels": [],
+          "reference": "แบบมาตรฐานใยสังเคราะห์",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "panel",
+          "label": "แผงกรุ ค.ส.ล.",
+          "detail": "ตามแบบมาตรฐาน; ขอบบน/ล่าง [ต้องกรอก]",
+          "levels": [],
+          "reference": "แบบมาตรฐานแผงกรุ",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "pile-a",
+          "label": "เสาเข็ม A",
+          "detail": "0.30×0.50×12.00 ม. @1.00 ม. ดูแบบขยาย; @ ไม่ใช่ cut-off",
+          "levels": [],
+          "reference": "แบบขยายเสาเข็ม A",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "pile-b",
+          "label": "เสาเข็ม B",
+          "detail": "0.30×0.40×12.00 ม. @1.00 ม. ดูแบบขยาย",
+          "levels": [],
+          "reference": "แบบขยายเสาเข็ม B",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "existing-ground",
+          "label": "แนวดินเดิม",
+          "detail": "ตามเส้นดินเดิมในรูป; ระดับตาม กม. [ต้องกรอก]",
+          "levels": [],
+          "reference": "",
+          "missing": "ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้"
+        },
+        {
+          "id": "riprap",
+          "label": "หินทิ้งลาดตลิ่ง",
+          "detail": "หินใหญ่ขนาดไม่น้อยกว่า 0.35 ม.; slope 1:1.5; ความหนารายละเอียด [ต้องกรอก]",
+          "levels": [
+            {
+              "label": "สันหินทิ้ง",
+              "value": 98.5,
+              "kind": "riprap",
+              "color": "#fb923c",
+              "verification": "ตรวจตัวเลขและ leader line กับภาพ PDF"
+            }
+          ],
+          "reference": "",
+          "missing": ""
+        }
+      ],
+      "dimensions": [
+        "ด้านหลังแนวสันเขื่อน 2.50 ม.; ด้านแม่น้ำ 1.00 ม.",
+        "มิติย่อย 0.50, 0.40, 1.70, 0.40 ม. ตามเส้นมิติ; GB1 หนา 0.50 ม.",
+        "ระดับสันเขื่อนถึงสันหินทิ้งกำกับ 2.00 ม.; slope 1:1.5"
+      ],
+      "referenceWaterLevels": [
+        {
+          "label": "น้ำสูงสุดเฉลี่ย",
+          "value": 99.8,
+          "color": "#ef4444"
+        },
+        {
+          "label": "น้ำต่ำสุดเฉลี่ย",
+          "value": 93.8,
+          "color": "#94a3c4"
+        }
+      ],
+      "chainage": null,
+      "notes": [
+        "มิติและระดับสมมุติเป็นเมตร นอกจากระบุเป็นอย่างอื่น",
+        "รายการที่อ้างแบบขยาย/แบบมาตรฐานยังไม่มีแผ่นรายละเอียดแนบ; ห้ามเติมเหล็ก ระดับ หรือ spec จากการคาดเดา",
+        "ระดับดินเดิมเป็นเส้นอ้างอิงในภาพ ไม่ใช่ spot elevation ทุกตำแหน่ง",
+        "แบบใช้ local datum: แสดงระดับแบบได้ แต่ห้ามเปรียบเทียบกับ station MSL จนกว่าจะผูก BM กับ MSL",
+        "น้ำสำรวจ +95.600 จาก config เก่าไม่ได้ปรากฏใน typical นี้ ไม่ถือว่าตรวจจากหน้านี้แล้ว",
+        "สี highlight/กรอบ annotation เป็นเครื่องหมายบนเอกสาร ไม่ใช่ component เพิ่ม"
+      ],
+      "datum": "local"
+    }
+  ]
 }
