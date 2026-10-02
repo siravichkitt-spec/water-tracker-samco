@@ -33,5 +33,12 @@
     "pages": 1,
     "sha256": "dc50d561a3aa1b922501f380e50b22231aa9a5277b6bf56aaff50bbcd5281c9d",
     "reviewedAt": "2026-10-01"
+  },
+  {
+    "asset": "buengkan-full",
+    "originalFile": "A_01-05.pdf",
+    "pages": 66,
+    "sha256": "81a0b264c0b56b2d52a5d0f5cf9700af901b3984606dda6781b9f29a4b1f007e",
+    "reviewedAt": "2026-10-02"
   }
 ]

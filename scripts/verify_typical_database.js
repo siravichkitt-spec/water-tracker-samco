@@ -2,6 +2,7 @@
 // Read-only public REST verification against SAMCO LOGISTICS; no secret key needed.
 const fs=require('node:fs');
 const assert=require('node:assert/strict');
+const {isDeepStrictEqual}=require('node:util');
 const html=fs.readFileSync('index.html','utf8');
 const url=html.match(/const SB_URL = '([^']+)'/)[1];
 const key=html.match(/const SB_ANON = '([^']+)'/)[1];
@@ -16,7 +17,7 @@ const expected=JSON.parse(fs.readFileSync('supabase-seed-sites.json','utf8'));
   for(const row of rows){
     const e=expected.find(e=>e.id===row.id);
     assert.ok(e);
-    assert.deepEqual(row.typical_sections,e.typical_sections);
+    assert.ok(isDeepStrictEqual(row.typical_sections,e.typical_sections),row.id+': section metadata mismatch (inspect source registry and database; omit huge diff)');
     assert.deepEqual(row.design_levels,e.design_levels);
     assert.equal(row.project_ref,e.project_ref);
     assert.equal(Number(row.datum_offset),Number(e.datum_offset));
@@ -28,6 +29,6 @@ const expected=JSON.parse(fs.readFileSync('supabase-seed-sites.json','utf8'));
     for(const s of row.typical_sections){sections++;components+=s.components.length;levels+=s.components.reduce((n,c)=>n+c.levels.length,0);}
     console.log(row.id+': all fields match source registry; public SELECT successful');
   }
-  assert.equal(sections,6);assert.equal(components,93);assert.equal(levels,18);
-  console.log('Verified 5 sites / 6 sections / 93 components / 18 explicit levels in SAMCO LOGISTICS Supabase.');
+  assert.equal(sections,94);assert.equal(components,1265);assert.equal(levels,184);
+  console.log('Verified 5 sites / 94 section/profile entries / 1265 component occurrences / 184 spot-level occurrences (including repeated typical references).');
 })().catch(error=>{console.error(error);process.exitCode=1;});

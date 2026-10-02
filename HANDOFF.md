@@ -1,8 +1,8 @@
 # SAMCO Water Level Tracker — Operations Handoff
 
-**Version:** v5 (typical sections)
+**Version:** v6 (vector section animation)
 
-**Verified:** 2026-10-01 (typical sections; ingestion implementation unchanged)
+**Verified:** 2026-10-02 (local browser, metadata and public read-only access; ingestion implementation unchanged)
 
 **Entity:** SAMCO LOGISTICS — (ก) แพนสั่งได้เอง
 
@@ -12,6 +12,10 @@
 ## Source of truth
 
 ### Typical-section release
+
+Current presentation is SVG animation, not PDF images: see `README.md` and `outputs/section_animation_v01_20261002/review_section_animation_water_tracker_v01_20261002.md`. Earlier six-section transcription below remains historical provenance. Buengkan's full drawing adds detail sections and all 76 surveyed-profile references, with explicit schematic/not-digitized ground limitations. Current totals including repeats are 94 entries / 1265 component occurrences / 184 level occurrences.
+
+Buengkan latest actual database measurement checked 2026-10-02 is 2026-09-14 09:00 Bangkok (182.840 mMSL, ThaiWater). It must show STALE. No BM-to-MSL tie was found in the supplied local-datum BM page; never infer the offset from water values. Drawing page 48 is sheet 47/65, not the previously misread 17/65.
 
 Owner approved the new PDF set and confirmed the Prachinburi drawing belongs to the existing site. `water_tracker_sites.typical_sections` contains all six sections, 93 component records, 18 explicit levels, source references and hashes. The full review/recovery files are in `outputs/typical_sections_water_tracker_v01_20261001/`.
 

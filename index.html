@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="samco-release" content="water-tracker-v4.0-20261001">
+<meta name="samco-release" content="water-tracker-v4.1-20261002">
 <title>Water Level Tracker — SAMCO</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%233ec6ff'/%3E%3Cpath d='M32 12C24 24 18 31 18 40a14 14 0 0 0 28 0c0-9-6-16-14-28Z' fill='%230b1220'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -12,8 +12,10 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
-<script src="typical-sections.js"></script>
-<script src="typical-ui.js"></script>
+<script src="buengkan-details.js?v=4.1-20261002"></script>
+<script src="typical-sections.js?v=4.1-20261002"></script>
+<script src="section-animation.js?v=4.1-20261002"></script>
+<script src="typical-ui.js?v=4.1-20261002"></script>
 <style>
 :root {
   --bg: #0b1220;
@@ -160,6 +162,29 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 .typical-audit { padding:12px 16px; font-size:12px; color:var(--text-dim); }
 .typical-audit summary { cursor:pointer; color:var(--accent); }
 .typical-audit p { margin:8px 0; }
+.section-summary { padding:16px; cursor:pointer; font-weight:600; color:var(--accent); }
+.section-summary span { font-size:11px; color:var(--text-dim); font-weight:400; margin-left:8px; }
+.animation-scroll { padding:12px; overflow-x:auto; }
+.animation-mobile-hint { display:none; }
+@media(max-width:700px) { .animation-mobile-hint { display:block; margin:0 16px 8px; font-size:11px; color:var(--text-dim); } }
+.section-svg { width:100%; min-width:690px; height:auto; display:block; font-family:inherit; }
+.svg-component, .svg-marker, .svg-legend-item { cursor:pointer; }
+.svg-component:hover, .svg-component.component-active { filter:drop-shadow(0 0 5px #38bdf8); }
+.svg-marker.component-active circle, .svg-legend-item.component-active rect { stroke:#fbbf24; stroke-width:2; }
+.svg-marker:focus, .svg-legend-item:focus { outline:2px solid #fbbf24; }
+.component-inspector { margin:0 16px 16px; padding:12px; background:var(--surface-2); border-left:3px solid var(--accent); font-size:12px; }
+.component-inspector p { margin-top:6px; }
+.component-details summary { cursor:pointer; padding:12px 16px; color:var(--accent); font-size:12px; }
+.components-table tr.component-active { background:#243b55; }
+.other-sections>h4 { font-size:13px; color:var(--text-dim); margin:20px 0 8px; }
+.profile-limit { margin:12px 16px; }
+.profile-catalog { padding:16px; border:1px solid var(--border); border-radius:10px; margin-top:16px; font-size:12px; }
+.profile-catalog summary { cursor:pointer; color:var(--accent); }
+.profile-buttons { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:8px; margin-top:12px; }
+.profile-buttons button { background:var(--surface-2); border:1px solid var(--border); border-radius:5px; color:var(--text); padding:8px; cursor:pointer; }
+.water-wave.moving { animation:section-wave 3s linear infinite; }
+@keyframes section-wave { to { translate:48px 0; } }
+@media(prefers-reduced-motion:reduce) { .water-wave.moving { animation:none; } }
 .drawing-dialog { width:96vw; height:94vh; max-width:none; max-height:none; margin:auto; padding:14px; border:1px solid var(--border); border-radius:10px; background:var(--bg); color:var(--text); }
 .drawing-dialog::backdrop { background:rgba(0,0,0,.8); }
 .drawing-toolbar { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding-bottom:12px; }
@@ -261,7 +286,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 <div class="footer-note">
   <strong>Source:</strong> ThaiWater / สสน. + RID Big Data / กรมชลประทาน → Supabase project <code>samco-logistics</code> → public read-only dashboard · หน่วยต้นทางเป็น <strong>ม.รทก.</strong><br>
   <strong>Data semantics:</strong> แสดงค่าที่ station ไม่ใช่ sensor ที่หน้างาน · สเกลแบบคำนวณด้วย <code>design = msl + offset</code> เฉพาะ site ที่ datum ใช้ร่วมกันได้<br>
-  <strong>Release:</strong> <code>water-tracker-v4.0-20261001</code> · Typical sections จากแบบจริง + ทุก component + section-specific levels · Supabase Realtime + RID live fallback/backfill
+  <strong>Release:</strong> <code>water-tracker-v4.1-20261002</code> · Vector section animation + ทุก component + ระดับน้ำจริง · Supabase Realtime + RID live fallback/backfill
 </div>
 
 </div>
@@ -402,7 +427,7 @@ const SITES_FALLBACK = [
     datumOffset: 0.000,
     datumOffsetLocal: true,
     datumOffsetSource: 'แบบใช้ local datum อ้าง 66-BK04-1 = 100.600 ม. (แบบเดิม ปีงบประมาณ 2567) — ไม่ใช่ MSL สากล',
-    datumWarning: '⚠️ CRITICAL: ค่า "สมมุติ" ในแบบเป็น LOCAL DATUM ไม่ใช่ MSL สากล. Station TKS.121 รายงาน WL ~185 mMSL แต่แบบระบุ WL max +99.8 → offset ที่แท้จริงประมาณ 85-87 m ไม่ใช่ 0. ต้อง cross-check ที่ site ก่อนใช้เชิงตัวเลข. Chart แสดงในสเกล MSL ตาม RID/ThaiWater telemetry — ห้ามใช้เปรียบเทียบกับ design ตรงๆ',
+    datumWarning: 'แบบใช้ระดับสมมุติ (PDF หน้า 3 / แผ่น 2) ไม่ใช่ ม.รทก. ค่า offset [ต้องกรอก] จากผลรังวัดผูก BM เดียวกันกับ ม.รทก. ห้ามประมาณจากระดับน้ำสถานี; แสดง station MSL แยกจากระดับแบบจนกว่าจะมีหลักฐาน',
     designLevels: [
       { label: 'ระดับสันเขื่อน', value: 100.50, color: '#fbbf24', kind: 'crest' },
       { label: 'ระดับสันหินทิ้ง', value: 98.50, color: '#fb923c', kind: 'riprap' },
@@ -836,6 +861,7 @@ function renderKPIs() {
 function renderCrossSection() {
   SamcoTypicalUI.render(currentSite, currentReading, selectedSection()?.id);
 }
+window.currentSiteForSection = () => currentSite;
 
 // ============================================================
 // CHART: reference-lines plugin
@@ -1148,6 +1174,8 @@ document.getElementById('typical-sections').addEventListener('change', e => {
   if (e.target.id === 'typical-select') useSection(e.target.value).catch(console.error);
 });
 document.getElementById('typical-sections').addEventListener('click', e => {
+  const component = e.target.closest('[data-focus-component]');
+  if (component) SamcoTypicalUI.focus(component);
   const selectButton = e.target.closest('[data-use-section]');
   if (selectButton) useSection(selectButton.dataset.useSection).catch(console.error);
   const drawing = e.target.closest('[data-drawing]');
@@ -1160,6 +1188,11 @@ document.getElementById('typical-sections').addEventListener('click', e => {
     document.getElementById('drawing-zoom').value = '100';
     document.getElementById('drawing-title').textContent = drawing.dataset.title;
     dialog.showModal();
+  }
+});
+document.getElementById('typical-sections').addEventListener('keydown', e => {
+  if (['Enter',' '].includes(e.key) && e.target.matches('[data-focus-component]')) {
+    e.preventDefault(); SamcoTypicalUI.focus(e.target);
   }
 });
 document.getElementById('drawing-close').addEventListener('click', () => document.getElementById('drawing-dialog').close());
@@ -1335,6 +1368,7 @@ function subscribeRealtime() {
   setInterval(() => {
     renderFreshnessStatus();
     renderConnectionStatus();
+    renderCrossSection();
   }, 60_000);
   setInterval(() => {
     loadSite({ refreshCharts: true, reason: 'fallback' });

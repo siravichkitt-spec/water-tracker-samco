@@ -4,7 +4,7 @@
  */
 (function (root) {
   'use strict';
-  const revision = 'typical-sections-v1-20261001';
+  const revision = 'typical-animation-v2-20261002';
   const component = (id, label, detail, levels = [], reference = '') => ({
     id, label, detail, levels, reference,
     missing: levels.length ? '' : 'ไม่ระบุ spot elevation ใน typical section; ต้องขอแบบขยาย/รูปตัดตาม กม. หากต้องใช้ระดับของชิ้นส่วนนี้',
@@ -151,7 +151,11 @@
   ],[water('น้ำสูงสุดเฉลี่ย',99.515),water('น้ำขณะสำรวจ',94.29),water('น้ำต่ำสุดเฉลี่ย',92.174)],{
     notes:[...commonNotes,'เจ้าของงานยืนยัน PDF นี้เป็นงานปราจีนเดิมใน app; แก้ชื่อสถานที่ตาม title block เป็น ต.หาดนางแก้ว อ.กบินทร์บุรี โดยไม่เปลี่ยน gauge/พิกัด/datum ที่ยังไม่มีหลักฐานใหม่','หมายเหตุเรื่องราวกันตกหลังแผง/โครงสร้างประกอบ: ตรวจสภาพจริงและการเปลี่ยนแปลงตามกระบวนการอนุมัติแบบในต้นฉบับ'],
   })];
-  const buengkan = [section('buengkan-typical','รูปตัดเขื่อนป้องกันตลิ่งทั่วไป',source('เเม่นำ้ฮี้ บึงกาฬ.pdf','buengkan',1,'17 / 65','D670257 (เลขท้ายแผ่นอ่านไม่ชัด)'),[
+  const buengkan = [section('buengkan-typical','รูปตัดเขื่อนป้องกันตลิ่งทั่วไป',{
+    ...source('A_01-05.pdf','buengkan-full',48,'47 / 65','D670257 / แผ่น 47'),
+    image:'',
+    reviewedAt:'2026-10-02', revisionStatus:'ชุดแบบเต็มที่เจ้าของงานส่ง 2026-10-02; annotation ไม่ถือเป็น revision อนุมัติ',
+  },[
     component('crest','คาน GB1 / โครงสร้างสันเขื่อน','ตาม label GB1; ความหนาในรูป 0.50 ม.; เหล็กดูแบบขยาย',[level('สันเขื่อน',100.5,'crest')], 'แบบขยาย GB1'),
     ...wallComponents(12),
     component('riprap','หินทิ้งลาดตลิ่ง','หินใหญ่ขนาดไม่น้อยกว่า 0.35 ม.; slope 1:1.5; ความหนารายละเอียด [ต้องกรอก]',[level('สันหินทิ้ง',98.5,'riprap')]),
@@ -160,8 +164,11 @@
     'มิติย่อย 0.50, 0.40, 1.70, 0.40 ม. ตามเส้นมิติ; GB1 หนา 0.50 ม.',
     'ระดับสันเขื่อนถึงสันหินทิ้งกำกับ 2.00 ม.; slope 1:1.5',
   ],[water('น้ำสูงสุดเฉลี่ย',99.8),water('น้ำต่ำสุดเฉลี่ย',93.8)],{
-    datum:'local', notes:[...commonNotes,'แบบใช้ local datum: แสดงระดับแบบได้ แต่ห้ามเปรียบเทียบกับ station MSL จนกว่าจะผูก BM กับ MSL','น้ำสำรวจ +95.600 จาก config เก่าไม่ได้ปรากฏใน typical นี้ ไม่ถือว่าตรวจจากหน้านี้แล้ว','สี highlight/กรอบ annotation เป็นเครื่องหมายบนเอกสาร ไม่ใช่ component เพิ่ม'],
+    datum:'local', notes:[...commonNotes,'แบบใช้ local datum: แสดงระดับแบบได้ แต่ห้ามเปรียบเทียบกับ station MSL จนกว่าจะผูก BM กับ MSL','PDF หน้า 3 / แผ่น 2 ระบุระดับ (สมมุติ); น้ำสำรวจ +95.600 อยู่ในหน้านั้น ไม่ใช่ค่าปัจจุบัน','สี highlight/กรอบ annotation เป็นเครื่องหมายบนเอกสาร ไม่ใช่ component เพิ่ม'],
   })];
+  const buengkanDetails = typeof module !== 'undefined' && module.exports
+    ? require('./buengkan-details.js') : root.SamcoBuengkanDetails;
+  buengkan.push(...buengkanDetails.sections(buengkan[0]));
   const sites = {
     'thachin-nakhonchaisi':{sections:thachin},
     'khoksalut-nan':{sections:nan},
