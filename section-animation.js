@@ -7,6 +7,18 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const finite=v=>v!=null&&v!==''&&Number.isFinite(Number(v));
   const signed=v=>`${Number(v)>=0?'+':''}${Number(v).toFixed(3)}`;
+  const palette={background:'#111c2e',ink:'#cad8ea',muted:'#9fb1ca',accent:'#55c9ff',concrete:'#26364a',sand:'#39352b',earth:'#2d303a',reinforcement:'#c4a6ff'};
+  // Map the drawing's presentation attributes, including detail views and hatches.
+  function darkSvg(markup){
+    const colors={'#fbfcfe':palette.background,'#f8fafc':palette.background,'#0f172a':'#e8f1ff','#334155':palette.ink,'#475569':palette.muted,'#64748b':palette.muted,'#0369a1':palette.accent,'#0891b2':palette.accent,'#94a3b8':'#7f94ad','#cbd5e1':'#425570','#e2e8f0':'#33455d','#f1f5f9':palette.concrete,'#fffbeb':palette.sand,'#f5f5f4':palette.earth,'#a8a29e':'#b5aa90','#7c3aed':palette.reinforcement};
+    return markup.replace(/(fill|stroke)="(#[a-f0-9]+)"/gi,(all,attribute,color)=>`${attribute}="${colors[color.toLowerCase()]||color}"`);
+  }
+  function waterInfo(site,reading,now){
+    const s=state(site,reading,now);if(!s.reading||!s.canOverlay)return null;
+    const measuredAt=new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(reading.measuredAt));
+    const fetchedAt=Number.isFinite(Date.parse(reading.fetchedAt))?new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',second:'2-digit'}).format(new Date(reading.fetchedAt))+' (เวลาไทย)':'ไม่พบเวลารับในข้อมูลต้นทาง';
+    return {level:`${signed(reading.wlDesign)} ม. สเกลแบบ`,msl:`${signed(reading.wlMsl)} ม.รทก.`,station:String(site.stationCode||reading.stationId||'station'),measuredAt:measuredAt+' (เวลาไทย)',timestamp:reading.measuredAt,fetchedAt,status:s.status};
+  }
   const DETAIL=['pile-detail','railing-detail','manhole','small-drain','pipe-front','stairs','cap'];
   const profiles={
     'thachin-nakhonchaisi':{cap:170,wall:640,end:1000,drop:200,layer:48,back:120},
@@ -19,7 +31,7 @@
     if(!reading||reading.siteId!==site.id||!finite(reading.wlMsl))return {status:'NO DATA',color:'#64748b',reading:null,canOverlay:false};
     const time=Date.parse(reading.measuredAt),cadence=Number(reading.cadenceMinutes),age=(now-time)/60000;
     const status=!Number.isFinite(time)||age<0||!finite(cadence)||cadence<=0?'UNKNOWN':age<=cadence*2?'LIVE':age<=cadence*4?'DELAYED':'STALE';
-    return {status,color:status==='LIVE'?'#0369a1':status==='STALE'?'#b91c1c':'#92400e',reading,canOverlay:!site.datumOffsetLocal&&finite(reading.wlDesign)&&Number.isFinite(time)};
+    return {status,color:status==='LIVE'?'#55c9ff':status==='STALE'?'#ff9eaa':'#ffd078',reading,canOverlay:!site.datumOffsetLocal&&finite(reading.wlDesign)&&Number.isFinite(time)};
   }
   function model(site,sec,reading,now){
     const s=state(site,reading,now),levels=sec.components.flatMap(c=>c.levels);
@@ -181,18 +193,21 @@
     const stamp=s.reading&&Number.isFinite(Date.parse(reading.measuredAt))?new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}).format(new Date(reading.measuredAt)):'—';
     let last=150;
     const rail=levels.slice().sort((a,b)=>b.value-a.value).map(l=>{const yy=y(l.value),labelY=Math.max(yy,last+30);last=labelY;return `<g class="spot-level"><path d="M1075 ${yy} h12 l8 ${labelY-yy} h10" fill="none" stroke="#64748b"/><text x="1070" y="${labelY-7}" font-size="13" fill="#334155" text-anchor="end">${signed(l.value)}</text><title>${esc(l.label)} · ${signed(l.value)} ม.</title></g>`;}).join('');
-    let water='';
+    let water='',interaction='';
     if(s.canOverlay&&!g.detailOnly)water=`<g class="water-layer" data-water-value="${Number(reading.wlDesign)}" data-water-y="${waterY}" clip-path="url(#${prefix}-water-clip)"><path d="M320 ${waterY} H1100 V610 H320 Z" fill="#bae6fd" opacity=".48"/><path d="M320 ${waterY} H1100" stroke="${s.color}" stroke-width="2.5"/></g>`;
+    if(water){const info=waterInfo(site,reading,now),label=`น้ำ ${info.level} · วัดเมื่อ ${info.measuredAt} · ${info.station} · ${info.status}`;
+      interaction=`<g class="water-interaction" data-water-section="${esc(sec.id)}" data-water-info="${esc(JSON.stringify(info))}" tabindex="0" role="button" aria-label="${esc(label)}" aria-expanded="false" clip-path="url(#${prefix}-water-clip)"><rect x="320" y="${waterY-22}" width="780" height="44" fill="none" pointer-events="none"/><path class="water-hit" d="M320 ${waterY} H1100" fill="none" stroke="transparent" stroke-width="44" vector-effect="non-scaling-stroke"/><title>${esc(label)}</title></g>`;
+    }
     const callouts=layout.map(l=>{const [ax,ay]=l.anchor,start=l.side==='left'?292:1120,elbow=l.side==='left'?308:1110;return `<g class="svg-callout" data-focus-component="${esc(l.c.id)}" tabindex="0" role="button" aria-label="${esc(l.c.label)}" data-label-x="${l.x}" data-label-y="${l.y}" data-label-width="${l.width}" data-label-height="${l.height}"><path class="callout-leader" d="M${start} ${l.y+16} H${elbow} L${ax} ${ay}" fill="none" stroke="#94a3b8" stroke-width="1"/><circle cx="${ax}" cy="${ay}" r="2.5" fill="#475569"/><text x="${l.x}" y="${l.y+17}" fill="#0369a1" font-size="15" font-weight="700">${String(l.n).padStart(2,'0')}</text><text x="${l.x+30}" y="${l.y+17}" fill="#334155" font-size="15">${l.lines.map((line,i)=>`<tspan x="${l.x+30}" dy="${i?19:0}">${esc(line)}</tspan>`).join('')}</text><title>${esc(l.c.detail)}</title></g>`;}).join('');
     const view=options.compact?'260 145 855 590':`0 0 1400 ${h}`;
-    return `<svg class="section-svg ${options.compact?'compact-svg':'full-svg'}" data-section-svg="${esc(sec.id)}" data-domain-min="${min}" data-domain-max="${max}" data-geometry-profile="${esc(site.id)}" viewBox="${view}" role="img" aria-label="${esc(sec.name)} — รูปตัด vector ทุก component · น้ำ ${s.status}">
+    return darkSvg(`<svg class="section-svg ${options.compact?'compact-svg':'full-svg'}" data-section-svg="${esc(sec.id)}" data-domain-min="${min}" data-domain-max="${max}" data-geometry-profile="${esc(site.id)}" viewBox="${view}" role="group" aria-label="${esc(sec.name)} — รูปตัด vector ทุก component · น้ำ ${s.status}">
       <defs><pattern id="${prefix}-concrete" width="27" height="23" patternUnits="userSpaceOnUse"><rect width="27" height="23" fill="#f1f5f9"/><path d="M5 6 l3 4 h-4 Z M19 18 h2" fill="none" stroke="#94a3b8" stroke-width=".7"/></pattern><pattern id="${prefix}-sand" width="14" height="14" patternUnits="userSpaceOnUse"><rect width="14" height="14" fill="#fffbeb"/><circle cx="3" cy="3" r=".7" fill="#a8a29e"/><circle cx="10" cy="9" r=".7" fill="#a8a29e"/></pattern><pattern id="${prefix}-earth" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="12" height="12" fill="#f5f5f4"/><path d="M0 12 L12 0 M0 0 L12 12" stroke="#a8a29e" stroke-width=".6"/></pattern><pattern id="${prefix}-rock" width="29" height="24" patternUnits="userSpaceOnUse"><rect width="29" height="24" fill="#f1f5f9"/><path d="M1 8 L9 1 L21 4 L27 14 L18 23 L6 20 Z" fill="none" stroke="#64748b" stroke-width=".8"/></pattern><pattern id="${prefix}-mesh" width="9" height="9" patternUnits="userSpaceOnUse"><path d="M0 0 L9 9 M0 9 L9 0" stroke="#64748b" stroke-width=".5"/></pattern><clipPath id="${prefix}-water-clip"><path d="${g.clip}"/></clipPath></defs>
       <rect width="1400" height="${h}" fill="#fbfcfe"/>
       <g class="drawing-heading"><text x="30" y="42" font-size="23" font-weight="700" fill="#0f172a">${esc(sec.name)}</text><text x="30" y="69" font-size="15" fill="#64748b">${esc(sec.source.drawingNo)} · PDF ${sec.source.page} · แผ่น ${esc(sec.source.sheet)} · geometry schematic / ไม่ใช่ as-built</text><path d="M30 88 H1370" stroke="#cbd5e1"/>
       <text x="30" y="121" font-size="19" font-weight="700" fill="${s.color}">${s.reading?`น้ำ ${signed(s.canOverlay&&!g.detailOnly?reading.wlDesign:reading.wlMsl)} ${s.canOverlay&&!g.detailOnly?'ม. สเกลแบบ':'ม.รทก.'} · ${s.status}`:'NO DATA — ไม่มีข้อมูลน้ำ'}</text><text x="610" y="121" font-size="15" fill="#475569">${esc(site.stationCode||reading?.stationId||'station')} · ${esc(stamp)} · ${site.datumOffsetLocal?'แยกสเกล — ยังไม่ผูก BM':'station / ไม่ใช่ sensor หน้างาน'}</text></g>
-      ${water}<g class="structure-layer">${g.html}</g>${g.detailOnly?'':rail}${options.compact?'':callouts}
+      ${water}<g class="structure-layer">${g.html}</g>${g.detailOnly?'':rail}${interaction}${options.compact?'':callouts}
       ${options.compact?'':`<text x="330" y="${h-32}" font-size="14" fill="#64748b">Break line: ความยาวเข็มย่อ · ระดับหัว/ปลายที่ไม่ระบุ [ต้องกรอก] · เส้นดิน schematic</text>`}
-    </svg>`;
+    </svg>`);
   }
   function animate(container,previous){
     if(!previous||typeof root.matchMedia==='function'&&root.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -202,5 +217,5 @@
       if(Number.isFinite(delta)&&Math.abs(delta)<360)layer.animate([{transform:`translateY(${delta}px)`},{transform:'translateY(0px)'}],{duration:350,easing:'ease-out'});
     }
   }
-  const api={vector,state,model,geometry,calloutLayout,profiles,animate,esc};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SamcoSectionAnimation=api;
+  const api={vector,state,model,geometry,calloutLayout,profiles,animate,esc,darkSvg,palette,waterInfo};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SamcoSectionAnimation=api;
 })(typeof window==='undefined'?globalThis:window);

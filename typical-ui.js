@@ -4,6 +4,7 @@
   const safeAsset = path => /^assets\/typical\/[a-z0-9-]+\.(jpg|pdf)$/.test(path || '') ? path : '';
   const animation=typeof module!=='undefined'&&module.exports?require('./section-animation.js'):root.SamcoSectionAnimation;
   const focused=new Map();
+  let waterTooltipSequence=0;
   function difference(level, site, reading) {
     if (site.datumOffsetLocal) return 'เทียบไม่ได้ — local datum';
     if (!reading || reading.siteId !== site.id || reading.wlDesign == null || !Number.isFinite(Number(reading.wlDesign))) return 'ไม่มีระดับน้ำสำหรับเทียบ';
@@ -26,7 +27,7 @@
       <div class="typical-card-header"><p>${esc(sourceLabel(src))} · เลขแบบ ${esc(src.drawingNo)}</p><button type="button" data-use-section="${esc(sec.id)}">${sec.id===current.id?'กำลังใช้เทียบกราฟ':'ใช้ section นี้เทียบกราฟ'}</button></div>
       ${sec.profileGroundStatus?`<p class="typical-limit profile-limit">${esc(sec.profileGroundStatus)}</p>`:''}
       ${waterStatus(site,sec,reading)}
-      <div class="drawing-controls"><span>เลือกชื่อ component เพื่อ highlight และแสดงเส้นชี้</span><button type="button" data-expand-vector="${esc(sec.id)}">ขยายภาพ vector ↗</button></div>
+      <div class="drawing-controls"><span>เลือกชื่อ component เพื่อ highlight และแสดงเส้นชี้${animation.state(site,reading).canOverlay&&!['pile-detail','railing-detail','manhole','small-drain','pipe-front','stairs','cap'].includes(sec.scene)?' · ชี้/แตะเส้นน้ำเพื่อดูระดับและเวลาวัด':''}</span><button type="button" data-expand-vector="${esc(sec.id)}">ขยายภาพ vector ↗</button></div>
       <div class="animation-scroll drawing-desktop">${animation.vector(site,sec,reading)}</div>
       <div class="animation-scroll drawing-mobile">${animation.vector(site,sec,reading,undefined,{compact:true})}</div>
       ${detailViews(sec)}
@@ -44,7 +45,7 @@
       </details></article>`;
   }
   function detailViews(sec){
-    const view=(name,body)=>`<figure><svg viewBox="0 0 360 220" role="img" aria-label="${esc(name)} · schematic ตามแบบ"><rect width="360" height="220" fill="#fbfcfe"/><g stroke="#334155" stroke-width="1.5" fill="#f1f5f9">${body}</g></svg><figcaption>${esc(name)}<small>PDF ${sec.source.page} · schematic / ไม่มีแกนระดับน้ำ</small></figcaption></figure>`;
+    const view=(name,body)=>`<figure>${animation.darkSvg(`<svg viewBox="0 0 360 220" role="img" aria-label="${esc(name)} · schematic ตามแบบ"><rect width="360" height="220" fill="#fbfcfe"/><g stroke="#334155" stroke-width="1.5" fill="#f1f5f9">${body}</g></svg>`)}<figcaption>${esc(name)}<small>PDF ${sec.source.page} · schematic / ไม่มีแกนระดับน้ำ</small></figcaption></figure>`;
     let views=[];
     if(sec.scene==='stairs')views=[
       view('B–B · คาน BST / เสา C1 / เสาเข็ม C','<path d="M35 45 H210 V65 H35 Z M215 45 H235 V165 H215 Z M35 150 H235 V175 H35 Z M218 175 v25 m14 -25 v25"/><path d="M216 80 H232 M216 96 H232 M216 112 H232 M216 128 H232" fill="none"/>'),
@@ -84,12 +85,39 @@
     for(const el of copy.querySelectorAll('*'))for(const attr of ['fill','clip-path'])if(el.hasAttribute(attr))el.setAttribute(attr,el.getAttribute(attr).replace(/url\(#([^)]*)\)/g,'url(#$1-zoom)'));
     copy.style.width=width;copy.style.maxWidth='none';return copy;
   }
+  const waterViews=new WeakMap();
+  function installWaterInteraction(host){
+    if(waterViews.has(host))return;
+    const view={target:null,pinned:false,point:null,tip:null};waterViews.set(host,view);
+    const hide=()=>{view.target?.setAttribute('aria-expanded','false');view.target?.removeAttribute('aria-describedby');view.tip?.remove();view.tip=null;view.target=null;view.pinned=false;};
+    const show=(target,event)=>{
+      if(!target)return;const info=JSON.parse(target.dataset.waterInfo);
+      view.target?.setAttribute('aria-expanded','false');view.target?.removeAttribute('aria-describedby');view.target=target;target.setAttribute('aria-expanded','true');
+      if(event?.clientX||event?.clientY)view.point={x:event.clientX,y:event.clientY};
+      const box=target.getBoundingClientRect(),point=view.point||{x:box.right-70,y:box.top+22};
+      if(!view.tip){view.tip=document.createElement('div');view.tip.id='water-tooltip-'+(++waterTooltipSequence);view.tip.className='water-tooltip';view.tip.setAttribute('role','dialog');view.tip.setAttribute('aria-label','รายละเอียดระดับน้ำ station');view.tip.setAttribute('aria-live','polite');view.tip.onpointerleave=()=>{if(!view.pinned)hide();};(host.closest('dialog')||document.body).append(view.tip);}
+      target.setAttribute('aria-describedby',view.tip.id);
+      view.tip.innerHTML=`<button type="button" data-water-close aria-label="ปิดรายละเอียดระดับน้ำ">×</button><strong>น้ำ ${esc(info.level)}</strong><p>วัด / update ระดับ: ${esc(info.measuredAt)}</p><p>${esc(info.station)} · ${esc(info.status)}<br>MSL ${esc(info.msl)}</p><small>ระบบรับข้อมูล: ${esc(info.fetchedAt)}<br>เวลาวัดจาก station ไม่ใช่เวลาเปิดหน้า app</small>`;
+      view.tip.querySelector('[data-water-close]').onclick=hide;
+      view.tip.onkeydown=e=>{if(e.key==='Escape')hide();};
+      const size=view.tip.getBoundingClientRect();view.tip.style.left=Math.max(12,Math.min(point.x+12,root.innerWidth-size.width-12))+'px';view.tip.style.top=Math.max(12,Math.min(point.y+18,root.innerHeight-size.height-12))+'px';
+    };
+    view.refresh=()=>{if(!view.target)return;const key=view.target.dataset.waterSection;const targets=Array.from(host.querySelectorAll('[data-water-section]'));const target=targets.find(t=>t.dataset.waterSection===key&&t.getBoundingClientRect().width>0);if(target)show(target);else hide();};
+    host.addEventListener('pointerover',e=>{const t=e.target.closest('[data-water-info]');if(t&&!view.pinned)show(t,e);});
+    host.addEventListener('pointerout',e=>{if(e.target.closest('[data-water-info]')&&!e.relatedTarget?.closest?.('[data-water-info],.water-tooltip')&&!view.pinned)hide();});
+    host.addEventListener('focusin',e=>{const t=e.target.closest('[data-water-info]');if(t)show(t);});
+    host.addEventListener('focusout',e=>{if(e.target.closest('[data-water-info]')&&!view.pinned)hide();});
+    host.addEventListener('click',e=>{const t=e.target.closest('[data-water-info]');if(t){if(view.pinned&&view.target===t)hide();else{view.pinned=true;show(t,e);}}});
+    host.addEventListener('keydown',e=>{const t=e.target.closest('[data-water-info]');if(t&&['Enter',' '].includes(e.key)){e.preventDefault();view.pinned=true;show(t);}if(e.key==='Escape')hide();});
+    // A page/modal host is stable across live rerenders; install once, no per-frame listeners.
+    host.addEventListener('pointerdown',e=>{if(!e.target.closest('[data-water-info],.water-tooltip'))hide();});
+  }
   function refreshZoom(){
     const dialog=document.getElementById?.('vector-dialog');if(!dialog)return;
     const site=root.currentSiteForSection?.();if(site?.id!==dialog.dataset.site){dialog.close();return;}
     const article=Array.from(document.querySelectorAll('article[data-section]')).find(a=>a.dataset.section===dialog.dataset.section);
     const svg=article?.querySelector('.full-svg');if(!svg){dialog.close();return;}
-    const old=dialog.querySelector('svg'),width=old?.style.width||'1400px';old?.replaceWith(zoomCopy(svg,width));
+    const old=dialog.querySelector('svg'),width=old?.style.width||'1400px';old?.replaceWith(zoomCopy(svg,width));waterViews.get(dialog)?.refresh();
   }
   function expand(target){
     const article=target.closest('article');if(!article)return;
@@ -107,8 +135,8 @@
       if(t.hasAttribute('data-vector-close'))dialog.close();else if(t.dataset.vectorZoom){const image=dialog.querySelector('svg');image.style.width=Math.max(700,Math.min(4200,parseInt(image.style.width)*(t.dataset.vectorZoom==='in'?1.25:.8)))+'px';}
     });
     dialog.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)&&event.target.matches('[data-focus-component]')){event.preventDefault();event.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
-    dialog.addEventListener('close',()=>{dialog.remove();Array.from(document.querySelectorAll('[data-expand-vector]')).find(t=>t.dataset.expandVector===dialog.dataset.section)?.focus();},{once:true});
-    document.body.append(dialog);dialog.showModal();
+    dialog.addEventListener('close',()=>{dialog.querySelector('.water-tooltip')?.remove();dialog.remove();Array.from(document.querySelectorAll('[data-expand-vector]')).find(t=>t.dataset.expandVector===dialog.dataset.section)?.focus();},{once:true});
+    document.body.append(dialog);installWaterInteraction(dialog);dialog.showModal();
   }
   function render(site,reading,selectedId){
     const el=document.getElementById('typical-sections'),sections=site.typicalSections||[];
@@ -136,6 +164,7 @@
         if(cid){const target=Array.from(article.querySelectorAll('[data-focus-component]')).find(t=>t.dataset.focusComponent===cid);if(target)focus(target);}
       }
       if(catalogOpen&&el.querySelector('.profile-catalog'))el.querySelector('.profile-catalog').open=true;
+      installWaterInteraction(el);waterViews.get(el)?.refresh();
       animation.animate(el,previous);
       refreshZoom();
     }

@@ -5,6 +5,28 @@ const registry=require('./typical-sections.js'),svg=require('./section-animation
 const now=Date.parse('2026-10-02T09:00:00Z');
 const reading=(id,delta=0)=>({siteId:id,wlMsl:7.3,wlDesign:99.7,measuredAt:new Date(now-delta*60000).toISOString(),cadenceMinutes:15});
 
+test('All SVG views use dark surfaces and accessible text colors',()=>{
+  const luminance=hex=>hex.slice(1).match(/../g).map(v=>parseInt(v,16)/255).map(v=>v<=.04045?v/12.92:((v+.055)/1.055)**2.4).reduce((sum,v,i)=>sum+v*[.2126,.7152,.0722][i],0);
+  for(const color of [svg.palette.ink,svg.palette.muted,svg.palette.accent])assert.ok((luminance(color)+.05)/(luminance(svg.palette.background)+.05)>=4.5);
+  for(const [id,entry]of Object.entries(registry.sites))for(const sec of entry.sections){
+    const html=svg.vector({id,datumOffsetLocal:id==='buengkan-nam-hi'},sec,reading(id),now);
+    assert.ok(html.includes('fill="'+svg.palette.background+'"'));assert.ok(!/fill="#(?:fbfcfe|f8fafc|f1f5f9)"/.test(html));
+  }
+});
+test('Water line interaction carries real value and separate measured/fetched timestamps',()=>{
+  const site={id:'thachin-nakhonchaisi',stationCode:'THA008'},r={...reading(site.id),fetchedAt:'2026-10-02T09:01:07Z'},sec=registry.sites[site.id].sections[0];
+  const info=svg.waterInfo(site,r,now);assert.equal(info.level,'+99.700 ม. สเกลแบบ');assert.equal(info.timestamp,r.measuredAt);assert.ok(info.measuredAt.includes('16:00'));assert.ok(info.fetchedAt.includes('16:01:07'));
+  const html=svg.vector(site,sec,r,now);assert.ok(html.includes('class="water-interaction"'));assert.ok(html.includes('stroke-width="44"'));assert.ok(html.indexOf('class="water-interaction"')>html.indexOf('class="structure-layer"'));
+  const updated=svg.waterInfo(site,{...r,wlDesign:99.8,measuredAt:'2026-10-02T09:10:00Z'},now+600000);assert.equal(updated.level,'+99.800 ม. สเกลแบบ');assert.ok(updated.measuredAt.includes('16:10'));
+});
+test('Water interaction never invents a line for incompatible/no-data/detail views',()=>{
+  const id='buengkan-nam-hi',sec=registry.sites[id].sections[0];assert.equal(svg.waterInfo({id,datumOffsetLocal:true},reading(id),now),null);
+  assert.ok(!svg.vector({id,datumOffsetLocal:true},sec,reading(id),now).includes('class="water-interaction"'));
+  assert.ok(!svg.vector({id,datumOffsetLocal:true},sec,null,now).includes('class="water-interaction"'));
+  assert.equal(svg.waterInfo({id:'other'},reading(id),now),null);
+  const rail=registry.sites[id].sections.find(s=>s.scene==='railing-detail');assert.ok(!svg.vector({id},rail,reading(id),now).includes('class="water-interaction"'));
+});
+
 test('Superseded site requests cannot log mutable telemetry or paint another project error',async()=>{
   const vm=require('node:vm'),html=fs.readFileSync('index.html','utf8');
   const source=html.slice(html.indexOf('async function loadSite({'),html.indexOf('\nfunction subscribeRealtime()'));
