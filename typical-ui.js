@@ -25,9 +25,15 @@
       <summary class="section-summary">${esc(sec.name)} <span>${sec.components.length} component · แผ่น ${esc(src.sheet)}</span></summary>
       <div class="typical-card-header"><p>${esc(sourceLabel(src))} · เลขแบบ ${esc(src.drawingNo)}</p><button type="button" data-use-section="${esc(sec.id)}">${sec.id===current.id?'กำลังใช้เทียบกราฟ':'ใช้ section นี้เทียบกราฟ'}</button></div>
       ${sec.profileGroundStatus?`<p class="typical-limit profile-limit">${esc(sec.profileGroundStatus)}</p>`:''}
-      <div class="animation-scroll">${animation.vector(site,sec,reading)}</div>
-      <p class="animation-mobile-hint">เลื่อนภาพแนวนอนเพื่อดูค่าน้ำและรายการด้านขวา → · กดหมายเลขดู detail ด้านล่าง</p>
-      <div class="component-inspector" aria-live="polite">กดหมายเลขหรือชื่อ component ในภาพเพื่อดู detail และระดับ</div>
+      ${waterStatus(site,sec,reading)}
+      <div class="drawing-controls"><span>เลือกชื่อ component เพื่อ highlight และแสดงเส้นชี้</span><button type="button" data-expand-vector="${esc(sec.id)}">ขยายภาพ vector ↗</button></div>
+      <div class="animation-scroll drawing-desktop">${animation.vector(site,sec,reading)}</div>
+      <div class="animation-scroll drawing-mobile">${animation.vector(site,sec,reading,undefined,{compact:true})}</div>
+      ${detailViews(sec)}
+      <div class="drawing-levels">${sec.components.flatMap(c=>c.levels.map(l=>`<button type="button" data-focus-component="${esc(c.id)}">${esc(l.label)} <strong>+${Number(l.value).toFixed(3)} ม.</strong></button>`)).join('')}</div>
+      <p class="drawing-note">geometry schematic ตาม view ในแบบ · ไม่ใช่ as-built · break line ย่อความยาวเข็ม · ระดับที่ไม่ระบุ [ต้องกรอก]${sec.scene==='stairs'?' · A–A เป็นแนวตามบันได ไม่ใช่รูปตัดตั้งฉากแม่น้ำ':''}</p>
+      <div class="component-picker" aria-label="ทุก component ใน section">${sec.components.map((c,i)=>`<button type="button" data-focus-component="${esc(c.id)}"><span>${String(i+1).padStart(2,'0')}</span>${esc(c.label)}</button>`).join('')}</div>
+      <div class="component-inspector" aria-live="polite">เลือกชื่อ component เพื่อดู detail ระดับ และหน้าที่มา</div>
       <details class="component-details"><summary>ทุก component / detail / ระดับ (${sec.components.length} รายการ)</summary><div class="components-scroll"><table class="components-table"><thead><tr><th>Component</th><th>Detail / spec</th><th>ระดับตามแบบ</th><th>เทียบกับน้ำ station</th></tr></thead><tbody>${rows}</tbody></table></div></details>
       <details class="typical-audit"><summary>มิติ / variant / ที่มา PDF</summary><ul>${sec.dimensions.map(d=>`<li>${esc(d)}</li>`).join('')}</ul>
       ${(sec.variants||[]).map(v=>`<p><strong>${esc(v.name)}</strong> ${esc(v.detail)}</p>`).join('')}
@@ -36,6 +42,73 @@
       <p>วันที่แบบ: ${esc(src.drawingDate||'[ต้องกรอก]')} · ตรวจ ${esc(src.reviewedAt)} · ${esc(src.revisionStatus)}</p>
       <ul>${sec.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>${pdf?`<a href="${pdf}#page=${Number(src.page)}" target="_blank" rel="noopener">เปิด PDF อ้างอิง ↗</a>`:''}</details>
       </details></article>`;
+  }
+  function detailViews(sec){
+    const view=(name,body)=>`<figure><svg viewBox="0 0 360 220" role="img" aria-label="${esc(name)} · schematic ตามแบบ"><rect width="360" height="220" fill="#fbfcfe"/><g stroke="#334155" stroke-width="1.5" fill="#f1f5f9">${body}</g></svg><figcaption>${esc(name)}<small>PDF ${sec.source.page} · schematic / ไม่มีแกนระดับน้ำ</small></figcaption></figure>`;
+    let views=[];
+    if(sec.scene==='stairs')views=[
+      view('B–B · คาน BST / เสา C1 / เสาเข็ม C','<path d="M35 45 H210 V65 H35 Z M215 45 H235 V165 H215 Z M35 150 H235 V175 H35 Z M218 175 v25 m14 -25 v25"/><path d="M216 80 H232 M216 96 H232 M216 112 H232 M216 128 H232" fill="none"/>'),
+      view('หน้าตัด C1 / BST','<path d="M55 58 h75 v75 h-75 Z M210 35 h70 v120 h-70 Z"/><path d="M62 65 h61 v61 h-61 Z M217 42 h56 v106 h-56 Z" fill="none"/><g fill="#334155"><circle cx="66" cy="69" r="3"/><circle cx="119" cy="69" r="3"/><circle cx="66" cy="122" r="3"/><circle cx="119" cy="122" r="3"/></g>'),
+      view('แปลนบันได / ชานพัก','<path d="M35 50 H325 V155 H35 Z M85 50 V155 M275 50 V155"/><path d="M104 50 V155 M123 50 V155 M142 50 V155 M161 50 V155 M180 50 V155 M199 50 V155 M218 50 V155 M237 50 V155 M256 50 V155" fill="none"/>'),
+    ];
+    if(sec.scene==='cap')views=[
+      view('หน้าตัดคาน GB1 / เหล็กเสริม','<path d="M40 60 h280 v60 h-280 Z"/><path d="M48 68 h264 v44 h-264 Z" fill="none"/>'+Array.from({length:6},(_,i)=>`<circle cx="${65+i*46}" cy="75" r="3" fill="#334155"/><circle cx="${65+i*46}" cy="105" r="3" fill="#334155"/>`).join('')),
+      view('GB2 · แยกจากคาน GB1','<path d="M100 40 H260 V140 H100 Z"/><path d="M111 51 H249 V129 H111 Z M170 141 V205 M190 141 V205" fill="none"/>'),
+      view('แผงกรุ · แบบไม่มีช่อง / แบบมีช่อง','<path d="M50 35 h95 v145 h-95 Z M210 35 h95 v145 h-95 Z"/><circle cx="257" cy="118" r="27" fill="#fbfcfe"/><path d="M60 45 H135 V170 H60 Z M220 45 H295 V170 H220 Z M225 88 L289 146 M225 146 L289 88" fill="none"/>'),
+    ];
+    if(sec.scene==='manhole')views=[
+      view('D–D · ช่องท่อ / พื้นบ่อ','<path d="M100 30 H260 V165 H100 Z M80 165 H280 V185 H80 Z"/><circle cx="180" cy="108" r="40" fill="#fbfcfe"/>'),
+      view('F–F · แปลนบ่อพัก','<path d="M100 45 H260 V175 H100 Z M120 65 H240 V155 H120 Z"/><path d="M35 90 H100 M35 125 H100 M260 90 H325 M260 125 H325" fill="none"/>'),
+      view('G–G · ฝา / กรอบ / หูยก','<path d="M55 75 H305 V125 H55 Z"/><path d="M62 82 H298 V118 H62 Z M80 95 H280 M80 108 H280" fill="none"/><circle cx="120" cy="100" r="8" fill="#fbfcfe"/><circle cx="240" cy="100" r="8" fill="#fbfcfe"/>'),
+    ];
+    if(sec.scene==='railing-detail')views=[
+      view('A–A · ฐานราว / anchor / คาน','<path d="M174 25 h12 v110 h-12 Z M145 135 h70 v10 h-70 Z M80 145 H280 V180 H80 Z"/><path d="M155 137 V169 H164 M205 137 V169 H196" fill="none"/>'),
+      view('B–B · หน้าตัดเสาราว','<path d="M120 40 h120 v120 h-120 Z M133 53 h94 v94 h-94 Z"/>'),
+      view('C–C · ฐานสองเสา','<path d="M80 40 h12 v95 h-12 Z M260 40 h12 v95 h-12 Z M65 135 h42 v10 h-42 Z M245 135 h42 v10 h-42 Z M40 145 H315 V177 H40 Z"/><path d="M78 139 V167 M94 139 V167 M258 139 V167 M274 139 V167" fill="none"/>'),
+    ];
+    if(sec.scene==='small-drain')views=[
+      view('1–1 · บ่อพักราง / ท่อ PVC','<path d="M75 40 H200 V163 H75 Z M95 60 H180 V142 H95 Z M70 31 H205 V40 H70 Z"/><path d="M200 130 H310 M200 145 H310" fill="none"/>'),
+      view('2–2 · รางระบายน้ำ / ตะแกรง','<path d="M70 50 H110 V150 H250 V50 H290 V175 H70 Z"/><path d="M70 48 H290 M80 40 V55 M102 40 V55 M124 40 V55 M146 40 V55 M168 40 V55 M190 40 V55 M212 40 V55 M234 40 V55 M256 40 V55 M278 40 V55" fill="none"/>'),
+    ];
+    return views.length?`<div class="drawing-insets">${views.join('')}</div>`:'';
+  }
+  function waterStatus(site,sec,reading){
+    const s=animation.state(site,reading),detail=['pile-detail','railing-detail','manhole','small-drain','pipe-front','stairs','cap'].includes(sec.scene);
+    const converted=s.canOverlay&&!detail;
+    const stamp=s.reading&&Number.isFinite(Date.parse(reading.measuredAt))?new Intl.DateTimeFormat('th-TH',{timeZone:'Asia/Bangkok',dateStyle:'short',timeStyle:'short'}).format(new Date(reading.measuredAt)):'—';
+    return `<div class="drawing-water-status"><div><small>น้ำล่าสุดจาก station · ${esc(s.status)}</small><strong>${s.reading?`${converted?Number(reading.wlDesign).toFixed(3):Number(reading.wlMsl).toFixed(3)} ${converted?'ม. สเกลแบบ':'ม.รทก.'}`:'NO DATA'}</strong></div><p>${esc(site.stationCode||reading?.stationId||'station')} · ${esc(stamp)}<br>${site.datumOffsetLocal?'แยกสเกลจากแบบ — ยังไม่ผูก BM / ไม่ overlay น้ำ':detail?'แบบขยายไม่มีแกนระดับน้ำ · reading แสดงแยก':'Derived station · ไม่ใช่ sensor หน้างาน'}</p></div>`;
+  }
+  function zoomCopy(svg,width='1400px'){
+    const copy=svg.cloneNode(true);
+    for(const el of copy.querySelectorAll('[id]'))el.id+='-zoom';
+    for(const el of copy.querySelectorAll('*'))for(const attr of ['fill','clip-path'])if(el.hasAttribute(attr))el.setAttribute(attr,el.getAttribute(attr).replace(/url\(#([^)]*)\)/g,'url(#$1-zoom)'));
+    copy.style.width=width;copy.style.maxWidth='none';return copy;
+  }
+  function refreshZoom(){
+    const dialog=document.getElementById?.('vector-dialog');if(!dialog)return;
+    const site=root.currentSiteForSection?.();if(site?.id!==dialog.dataset.site){dialog.close();return;}
+    const article=Array.from(document.querySelectorAll('article[data-section]')).find(a=>a.dataset.section===dialog.dataset.section);
+    const svg=article?.querySelector('.full-svg');if(!svg){dialog.close();return;}
+    const old=dialog.querySelector('svg'),width=old?.style.width||'1400px';old?.replaceWith(zoomCopy(svg,width));
+  }
+  function expand(target){
+    const article=target.closest('article');if(!article)return;
+    const svg=article.querySelector('.full-svg');if(!svg)return;
+    document.getElementById('vector-dialog')?.remove();
+    const dialog=document.createElement('dialog');dialog.id='vector-dialog';dialog.className='vector-dialog';
+    dialog.dataset.section=article.dataset.section;dialog.dataset.site=root.currentSiteForSection?.().id||'';
+    const copy=zoomCopy(svg);
+    dialog.innerHTML='<div class="vector-toolbar"><strong>ภาพ vector · zoom</strong><button type="button" data-vector-zoom="out" aria-label="ย่อภาพ">−</button><button type="button" data-vector-zoom="in" aria-label="ขยายภาพ">+</button><button type="button" data-vector-close>ปิด</button></div><div class="vector-viewport"></div>';
+    dialog.querySelector('.vector-viewport').append(copy);
+    dialog.addEventListener('click',event=>{
+      const component=event.target.closest('[data-focus-component]');
+      if(component){const a=Array.from(document.querySelectorAll('article[data-section]')).find(a=>a.dataset.section===dialog.dataset.section);const t=Array.from(a?.querySelectorAll('[data-focus-component]')||[]).find(t=>t.dataset.focusComponent===component.dataset.focusComponent);if(t){focus(t);refreshZoom();}return;}
+      const t=event.target.closest('button');if(!t)return;
+      if(t.hasAttribute('data-vector-close'))dialog.close();else if(t.dataset.vectorZoom){const image=dialog.querySelector('svg');image.style.width=Math.max(700,Math.min(4200,parseInt(image.style.width)*(t.dataset.vectorZoom==='in'?1.25:.8)))+'px';}
+    });
+    dialog.addEventListener('keydown',event=>{if(['Enter',' '].includes(event.key)&&event.target.matches('[data-focus-component]')){event.preventDefault();event.target.dispatchEvent(new MouseEvent('click',{bubbles:true}));}});
+    dialog.addEventListener('close',()=>{dialog.remove();Array.from(document.querySelectorAll('[data-expand-vector]')).find(t=>t.dataset.expandVector===dialog.dataset.section)?.focus();},{once:true});
+    document.body.append(dialog);dialog.showModal();
   }
   function render(site,reading,selectedId){
     const el=document.getElementById('typical-sections'),sections=site.typicalSections||[];
@@ -51,7 +124,7 @@
     const total=sections.reduce((n,s)=>n+s.components.length,0);
     el.innerHTML=`<div class="typical-summary"><div><strong>ภาพ animation · ทุก component</strong><br>${sections.length} section / รูปตัด · ${total} รายการ (รวม component ที่ซ้ำระหว่าง section)</div>
       <label>เลือก section <select id="typical-select" aria-label="Section ที่ใช้เทียบกราฟ">${sections.map(s=>`<option value="${esc(s.id)}" ${s.id===current.id?'selected':''}>${esc(s.name)}</option>`).join('')}</select></label></div>
-      <p class="typical-limit">เส้นน้ำใช้ reading จริงพร้อมเวลา · รูปร่าง component เป็น schematic; เฉพาะระดับที่ระบุในแบบใช้แกนระดับจริง · ไม่มีระดับ = [ต้องกรอก]${site.datumOffsetLocal?' · บึงกาฬยังไม่ผูก BM: น้ำ MSL แสดงแยกสเกล':''}</p>
+      <p class="typical-limit">ภาพเส้น vector ตาม view ในแบบ · เลือกชื่อเพื่อชี้ component · เฉพาะระดับที่มี source ใช้เทียบน้ำจริง · ไม่มีระดับ = [ต้องกรอก]${site.datumOffsetLocal?' · บึงกาฬยังไม่ผูก BM: น้ำ MSL แสดงแยกสเกล':''}</p>
       ${card(current,site,reading,current)}
       <div class="other-sections"><h4>Section อื่น — กดเพื่อแสดงทั้งหมด</h4>${sections.filter(s=>s.id!==current.id&&!s.profileNumber).map(s=>card(s,site,reading,current)).join('')}</div>
       ${sections.some(s=>s.profileNumber)?`<details class="profile-catalog"><summary>รูปตัดตามแนวทั้งหมด (${sections.filter(s=>s.profileNumber).length}) — ดินสำรวจยังไม่ digitize</summary><div class="profile-buttons">${sections.filter(s=>s.profileNumber).map(s=>`<button type="button" data-use-section="${esc(s.id)}">${esc(s.name)} · แผ่น ${esc(s.source.sheet)}</button>`).join('')}</div></details>`:''}`;
@@ -64,6 +137,7 @@
       }
       if(catalogOpen&&el.querySelector('.profile-catalog'))el.querySelector('.profile-catalog').open=true;
       animation.animate(el,previous);
+      refreshZoom();
     }
   }
   function focus(target){
@@ -76,5 +150,5 @@
     const info=article.querySelector('.component-inspector');
     info.innerHTML=`<strong>${esc(c.label)}</strong><p>${esc(c.detail)}</p><p>${c.levels.length?c.levels.map(l=>`${esc(l.label)} +${Number(l.value).toFixed(3)} ม.`).join(' · '):'ระดับ [ต้องกรอก] — ภาพ component เป็น schematic ไม่ใช้คำนวณ freeboard'}</p><small>${esc(sourceLabel(c.source||sec.source))}</small>`;
   }
-  const api={render,difference,esc,safeAsset,focus};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SamcoTypicalUI=api;
+  const api={render,difference,esc,safeAsset,focus,expand};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SamcoTypicalUI=api;
 })(typeof window==='undefined'?globalThis:window);

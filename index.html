@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="samco-release" content="water-tracker-v4.1-20261002">
+<meta name="samco-release" content="water-tracker-v4.2-20261003">
 <title>Water Level Tracker — SAMCO</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%233ec6ff'/%3E%3Cpath d='M32 12C24 24 18 31 18 40a14 14 0 0 0 28 0c0-9-6-16-14-28Z' fill='%230b1220'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -14,8 +14,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.112.3/dist/umd/supabase.min.js"></script>
 <script src="buengkan-details.js?v=4.1-20261002"></script>
 <script src="typical-sections.js?v=4.1-20261002"></script>
-<script src="section-animation.js?v=4.1-20261002"></script>
-<script src="typical-ui.js?v=4.1-20261002"></script>
+<script src="section-animation.js?v=4.2-20261003"></script>
+<script src="typical-ui.js?v=4.2-20261003"></script>
 <style>
 :root {
   --bg: #0b1220;
@@ -199,6 +199,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 .footer-note code { background: var(--surface); padding: 2px 6px; border-radius: 4px; font-size: 11px; font-family: 'JetBrains Mono', monospace; }
 @keyframes pulse { 0%,100% { opacity:1; transform:scale(1); } 50% { opacity:0.5; transform:scale(1.3); } }
 </style>
+<link rel="stylesheet" href="section-drawing.css?v=4.2-20261003">
 </head>
 <body>
 <div class="container">
@@ -286,7 +287,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 <div class="footer-note">
   <strong>Source:</strong> ThaiWater / สสน. + RID Big Data / กรมชลประทาน → Supabase project <code>samco-logistics</code> → public read-only dashboard · หน่วยต้นทางเป็น <strong>ม.รทก.</strong><br>
   <strong>Data semantics:</strong> แสดงค่าที่ station ไม่ใช่ sensor ที่หน้างาน · สเกลแบบคำนวณด้วย <code>design = msl + offset</code> เฉพาะ site ที่ datum ใช้ร่วมกันได้<br>
-  <strong>Release:</strong> <code>water-tracker-v4.1-20261002</code> · Vector section animation + ทุก component + ระดับน้ำจริง · Supabase Realtime + RID live fallback/backfill
+  <strong>Release:</strong> <code>water-tracker-v4.2-20261003</code> · Engineering vector + external callouts + mobile overview · Supabase Realtime + RID live fallback/backfill
 </div>
 
 </div>
@@ -1174,6 +1175,8 @@ document.getElementById('typical-sections').addEventListener('change', e => {
   if (e.target.id === 'typical-select') useSection(e.target.value).catch(console.error);
 });
 document.getElementById('typical-sections').addEventListener('click', e => {
+  const vectorButton = e.target.closest('[data-expand-vector]');
+  if (vectorButton) SamcoTypicalUI.expand(vectorButton);
   const component = e.target.closest('[data-focus-component]');
   if (component) SamcoTypicalUI.focus(component);
   const selectButton = e.target.closest('[data-use-section]');
@@ -1314,8 +1317,11 @@ async function loadSite({ refreshCharts = true, reason = 'manual' } = {}) {
     if (refreshCharts) {
       await Promise.all([renderRecentChart(), renderHistoricalChart(currentDays)]);
     }
-    console.log(`[${reason}]`, siteId, currentReading.measuredAt);
+    if (sequence !== loadSequence || currentSite.id !== siteId) return;
+    console.log(`[${reason}]`, siteId, reading.measuredAt);
   } catch (e) {
+    // A superseded request must not paint an error onto another project.
+    if (sequence !== loadSequence || currentSite.id !== siteId) return;
     console.error(e);
     document.getElementById('kpi-row').innerHTML = `<div class="error">Load error: ${e.message}</div>`;
     document.getElementById('live-dot').className = 'status-dot error';
