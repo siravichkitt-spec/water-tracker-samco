@@ -133,3 +133,13 @@ test('No PDF images in main renderer and no random/mock telemetry generated',()=
     assert.ok(!text.includes('<img '));
   }
 });
+test('DB-only site (added by skill) renders with its own profile and live water overlay',()=>{
+  const base=registry.sites['prachinburi'].sections[0];
+  const sec={...base,id:'newsite-typical',profile:{cap:140,wall:600,end:960,drop:170,layer:30,back:120}};
+  const site={id:'newsite-from-skill',stationCode:'X.1',datumOffsetLocal:false};
+  const html=svg.vector(site,sec,reading(site.id),now);
+  assert.ok(html.includes('class="water-layer"'));assert.ok(html.includes('data-geometry-profile="newsite-from-skill"'));
+  assert.deepEqual(svg.profileFor(sec),{cap:140,wall:600,end:960,drop:170,layer:30,back:120});
+  assert.deepEqual(svg.profileFor({}),svg.DEFAULT_PROFILE);
+  assert.ok(svg.vector(site,{...base,id:'nosection-profile'},reading(site.id),now).includes('class="water-layer"'));
+});

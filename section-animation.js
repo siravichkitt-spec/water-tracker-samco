@@ -27,6 +27,15 @@
     'prachinburi':{cap:150,wall:620,end:970,drop:155,layer:38,back:130},
     'buengkan-nam-hi':{cap:150,wall:620,end:970,drop:180,layer:50,back:145},
   };
+  // Sites added from the database (skill water-level-from-drawings) carry their own
+  // display profile in typical_sections[].profile; otherwise use the generic wall layout.
+  const DEFAULT_PROFILE={cap:150,wall:620,end:970,drop:180,layer:38,back:130};
+  function profileFor(sec){
+    const p=sec&&sec.profile;if(!p)return DEFAULT_PROFILE;
+    const out={...DEFAULT_PROFILE};
+    for(const k of Object.keys(DEFAULT_PROFILE))if(finite(p[k]))out[k]=Number(p[k]);
+    return out;
+  }
   function state(site,reading,now=Date.now()){
     if(!reading||reading.siteId!==site.id||!finite(reading.wlMsl))return {status:'NO DATA',color:'#64748b',reading:null,canOverlay:false};
     const time=Date.parse(reading.measuredAt),cadence=Number(reading.cadenceMinutes),age=(now-time)/60000;
@@ -42,7 +51,7 @@
     return {s,levels,min,max,y,waterY:s.canOverlay?y(reading.wlDesign):null};
   }
   function geometry(site,sec,m,prefix){
-    const cfg=profiles[site.id];if(!cfg)throw Error('Drawing profile missing: '+site.id);
+    const cfg=profiles[site.id]||profileFor(sec);if(!cfg)throw Error('Drawing profile missing: '+site.id);
     const comps=sec.components,has=id=>comps.some(c=>c.id===id),anchors={},pieces=[];
     const lev=id=>comps.find(c=>c.id===id)?.levels[0]?.value;
     const cy=finite(lev('crest'))?m.y(lev('crest')):240;
@@ -217,5 +226,5 @@
       if(Number.isFinite(delta)&&Math.abs(delta)<360)layer.animate([{transform:`translateY(${delta}px)`},{transform:'translateY(0px)'}],{duration:350,easing:'ease-out'});
     }
   }
-  const api={vector,state,model,geometry,calloutLayout,profiles,animate,esc,darkSvg,palette,waterInfo};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SamcoSectionAnimation=api;
+  const api={vector,state,model,geometry,calloutLayout,profiles,profileFor,DEFAULT_PROFILE,animate,esc,darkSvg,palette,waterInfo};if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.SamcoSectionAnimation=api;
 })(typeof window==='undefined'?globalThis:window);
