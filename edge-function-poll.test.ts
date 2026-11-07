@@ -5,7 +5,7 @@ import {
 } from "./edge-function-poll.ts";
 
 Deno.test("poll finiteNumber rejects missing source values", () => {
-  for (const value of [null, undefined, "", " ", "bad", Infinity, NaN]) {
+  for (const value of [null, undefined, "", " ", "bad", Infinity, NaN, true, false, [], {}, [1]]) {
     if (finiteNumber(value) !== null) {
       throw new Error(`expected null for ${String(value)}`);
     }

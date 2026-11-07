@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="samco-release" content="water-tracker-v4.3-20261003">
+<meta name="samco-release" content="water-tracker-v4.5-20261107">
 <title>Water Level Tracker — SAMCO</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%233ec6ff'/%3E%3Cpath d='M32 12C24 24 18 31 18 40a14 14 0 0 0 28 0c0-9-6-16-14-28Z' fill='%230b1220'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,6 +16,7 @@
 <script src="typical-sections.js?v=4.1-20261002"></script>
 <script src="section-animation.js?v=4.4-20261106"></script>
 <script src="typical-ui.js?v=4.3-20261003"></script>
+<script src="ingestion-health.js?v=1-20261107"></script>
 <style>
 :root {
   --bg: #0b1220;
@@ -287,7 +288,7 @@ table td:first-child, table th:first-child { text-align: left; font-family: 'IBM
 <div class="footer-note">
   <strong>Source:</strong> ThaiWater / สสน. + RID Big Data / กรมชลประทาน → Supabase project <code>samco-logistics</code> → public read-only dashboard · หน่วยต้นทางเป็น <strong>ม.รทก.</strong><br>
   <strong>Data semantics:</strong> แสดงค่าที่ station ไม่ใช่ sensor ที่หน้างาน · สเกลแบบคำนวณด้วย <code>design = msl + offset</code> เฉพาะ site ที่ datum ใช้ร่วมกันได้<br>
-  <strong>Release:</strong> <code>water-tracker-v4.3-20261003</code> · Dark engineering vector + water line tooltip · Supabase Realtime + RID live fallback/backfill
+  <strong>Release:</strong> <code>water-tracker-v4.5-20261107</code> · Dark engineering vector + water line tooltip · Supabase Realtime + RID live fallback/backfill
 </div>
 
 </div>
@@ -1259,7 +1260,8 @@ async function fetchLatestReadingFromDB(siteId) {
 async function fetchLatestIngestion() {
   const { data, error } = await sb
     .from('water_tracker_ingestion_runs')
-    .select('id, run_type, status, started_at, completed_at, active_sites, processed_readings, alert_count, source_latest_at, error_message')
+    .select('id, run_type, status, started_at, completed_at, active_sites, processed_readings, alert_count, source_latest_at, error_message, skipped')
+    .eq('run_type', 'poll')
     .order('started_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -1275,12 +1277,15 @@ function renderConnectionStatus() {
       ? 'Realtime degraded — fallback active'
       : 'Realtime connecting';
   if (!latestIngestion) {
+    el.dataset.ingestionStatus = 'unknown';
     el.textContent = `${realtimeLabel} · ingestion health unavailable`;
     return;
   }
   const runTime = latestIngestion.completed_at || latestIngestion.started_at;
   const runAge = (Date.now() - new Date(runTime).getTime()) / 60000;
-  el.textContent = `${realtimeLabel} · ingestion ${String(latestIngestion.status).toUpperCase()} · ${formatAge(runAge)} ที่แล้ว`;
+  const health = SamcoIngestionHealth.summarize(latestIngestion, SITES);
+  el.dataset.ingestionStatus = health.status;
+  el.textContent = `${realtimeLabel} · ${health.text} · ${formatAge(runAge)} ที่ผ่านมา`;
 }
 
 async function loadSite({ refreshCharts = true, reason = 'manual' } = {}) {

@@ -1,7 +1,7 @@
 import { finiteNumber, utcTimestamp } from "./edge-function-backfill.ts";
 
 Deno.test("finiteNumber rejects missing and invalid source values", () => {
-  const invalid = [null, undefined, "", "   ", "not-a-number", Infinity, NaN];
+  const invalid = [null, undefined, "", "   ", "not-a-number", Infinity, NaN, true, false, [], {}, [1]];
   for (const value of invalid) {
     if (finiteNumber(value) !== null) {
       throw new Error(`expected null for ${String(value)}`);

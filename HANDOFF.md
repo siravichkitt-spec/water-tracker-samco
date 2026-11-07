@@ -1,15 +1,37 @@
 # SAMCO Water Level Tracker — Operations Handoff
 
-**Version:** v6 (vector section animation)
+**Version:** v7 (RID MSL ingestion and per-site health)
 
-**Verified:** 2026-10-02 (local browser, metadata and public read-only access; ingestion implementation unchanged)
+**Verified:** 2026-11-07 source adapters, local/native tests and focused offline browser behavior. Production/database health is a separate verification scope.
 
 **Entity:** SAMCO LOGISTICS — (ก) แพนสั่งได้เอง
 
 **Production:** https://samco-water-tracker.vercel.app
 **GitHub:** https://github.com/siravichkitt-spec/water-tracker-samco
 
-## Source of truth
+## Ingestion repair verified 2026-11-07
+
+- Repository baseline: dec11fdb7cdd34b5a67a7765f9ae2aece527c2a0. Its DB-only-site renderer fallback is preserved.
+- RID's official frontend now uses https://bigdata.rid.go.th/api/ma/pier/rid/get_pier_by_station. The old bigdata-api /api/v1/ma route returned HTTP 404.
+- Both adapters require the explicit wl_values_msl field. wl_values is gauge-relative and is never substituted for MSL. Missing or invalid MSL remains no-data.
+- Backfill date filters use Bangkok calendar dates, including the UTC evening boundary. Dry-run, identity, timestamp and conflict protections remain in place.
+- Poll runs report partial for skipped sites or source warnings. The dashboard selects the latest poll, shows coverage and named site issues, and corrects legacy success rows whose coverage was incomplete.
+- Ingestion coverage is separate from measurement freshness. Site IDs, station assignments, datum restrictions, thresholds, schema, cron and authorization are unchanged.
+- Verification: 54/54 Node regressions; Deno 2.9.6 native checks and 6/6 native tests. Native pure tests used cached dependencies with all runtime permissions denied.
+- Focused browser verification used synthetic data, in-memory rendering and networking disabled at desktop and phone widths. It does not establish full production/database health.
+- No historical readings were imported by these tests. A protected backfill remains a separately scoped maintenance action.
+
+Run local checks:
+
+```text
+node --test typical-sections.test.js section-animation.test.js ingestion-health.test.js edge-functions.node.test.js
+deno check --no-config --no-lock edge-function-poll.ts edge-function-backfill.ts edge-function-poll.test.ts edge-function-backfill.test.ts
+deno test --no-config --no-lock --cached-only --deny-net --deny-read --deny-write --deny-env --deny-run --deny-ffi --deny-sys --no-prompt edge-function-poll.test.ts edge-function-backfill.test.ts
+```
+
+The sections below retain historical provenance and operating guidance. Old dates and source snapshots are historical, not a fresh check. Apply only release steps needed for an authorized change; this repair requires no schema migration.
+
+## Historical source of truth
 
 ### Typical-section release
 
@@ -56,7 +78,7 @@ RLS is enabled on all four exposed tables. The public roles have no INSERT, UPDA
 - Called by `pg_cron` every 15 minutes.
 - Requires `x-samco-cron-secret`; the secret is read by the scheduler from Supabase Vault.
 - Fetches ThaiWater once, filters configured stations, validates values/timestamps, and upserts idempotently.
-- For RID telemetry codes (`TKS.*`), also reads the official RID Big Data feed and persists whichever authoritative reading has the newest source timestamp. This keeps TKS.121 current when the ThaiWater live mirror is stale.
+- For RID telemetry codes (`TKS.*`), the adapter reads the official same-origin /api/ma feed and requires wl_values_msl. Verify production deployment and stored readings separately before declaring source recovery.
 - Rejects `null`, blank, non-numeric, and timezone-free RID values; a missing value is never converted to zero.
 - Creates at most one severity per reading and logs ingestion health.
 
@@ -111,11 +133,11 @@ Only after the response says both `ok: true` and `safe_to_write: true`, invoke t
 7. Open production, switch all sites, switch MSL/design scale, and verify Buengkan cannot select design scale.
 8. Confirm no browser console error and no service-role/cron secret in HTML, Git, or logs.
 
-## Release workflow
+## Historical release workflow (not a mandatory checklist for this repair)
 
 1. Run syntax and security checks locally.
-2. Apply the tracked Supabase migration.
-3. Deploy both Edge Functions with custom secret authentication (`verify_jwt=false` because the handler validates the scheduler secret).
+2. Apply a tracked migration only if the authorized change actually requires it. This ingestion repair proposes none.
+3. With explicit release approval, deploy only the required Edge Functions with custom secret authentication (`verify_jwt=false` because the handler validates the scheduler secret).
 4. Verify unauthorized calls and trigger one authorized poll from the database scheduler path.
 5. Deploy a Vercel preview and complete browser QA.
 6. Push the verified commit to `master`; the connected Vercel project auto-deploys production.

@@ -11,6 +11,12 @@ Public read-only, source-driven near-real-time monitoring for SAMCO LOGISTICS ba
 
 The dashboard displays measurements at the configured station from the freshest validated authoritative feed. A station value is not represented as an on-site sensor measurement. Design-scale comparisons are disabled whenever the source and project datums are incompatible.
 
+## Ingestion repair (2026-11-07)
+
+The RID adapters use the verified official route and explicit MSL values. The dashboard shows per-site partial ingestion instead of false full success. See [the operations handoff](HANDOFF.md) for source semantics, verification scope and release guidance.
+
+The complete local Node 24 suite is `node --test typical-sections.test.js section-animation.test.js ingestion-health.test.js edge-functions.node.test.js` (54 tests). Both handlers also pass native Deno 2.9.6 checks and six no-permission native tests. The isolated Node harness mocks source/database requests; focused browser checks use synthetic offline data.
+
 ## Security model
 
 - `anon` and `authenticated`: `SELECT` only on `water_tracker_*` public tables.

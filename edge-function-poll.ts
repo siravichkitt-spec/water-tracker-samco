@@ -1,13 +1,12 @@
 // Supabase Edge Function: water-tracker-poll
 // The scheduler supplies a 64-character secret. Public keys cannot invoke writes.
 
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 
 const THAIWATER_URL =
   "https://api-v3.thaiwater.net/api/v1/thaiwater30/public/waterlevel_load";
 const RID_HISTORY_URL =
-  "https://bigdata-api.rid.go.th/api/v1/ma/pier/rid/get_pier_by_station";
+  "https://bigdata.rid.go.th/api/ma/pier/rid/get_pier_by_station";
 const MIN_POLL_INTERVAL_MS = 8 * 60 * 1000;
 
 interface Site {
@@ -42,7 +41,7 @@ function errorText(error: unknown) {
 }
 
 export function finiteNumber(value: unknown): number | null {
-  if (value === null || value === undefined) return null;
+  if (typeof value !== "number" && typeof value !== "string") return null;
   if (typeof value === "string" && value.trim() === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
@@ -139,7 +138,8 @@ async function fetchRidLatest(
   for (const candidate of payload.data as Record<string, unknown>[]) {
     if (String(candidate.station_code ?? "") !== stationCode) continue;
     const measuredAt = utcTimestamp(candidate.hourly_time_utc);
-    const wlMsl = finiteNumber(candidate.wl_values);
+    // RID now provides gauge-relative wl_values separately; never treat it as MSL.
+    const wlMsl = finiteNumber(candidate.wl_values_msl);
     if (!measuredAt || wlMsl === null) continue;
     const reading: NormalizedReading = {
       measured_at: measuredAt,
@@ -221,6 +221,10 @@ export async function handlePoll(request: Request) {
     auth: { persistSession: false, autoRefreshToken: false },
   });
   let runId: number | null = null;
+  let activeSites: number | null = null;
+  let processedReadings = 0;
+  const skipped: Record<string, unknown>[] = [];
+  const sourceWarnings: Record<string, unknown>[] = [];
 
   try {
     if (!(await authorize(supabase, request))) {
@@ -256,9 +260,15 @@ export async function handlePoll(request: Request) {
       .order("sort_order", { ascending: true });
     if (sitesError) throw sitesError;
 
-    const stationReadings = await fetchThaiWater();
+    activeSites = sites?.length ?? 0;
+    // An outage in one feed must not prevent independent official feeds from running.
+    let stationReadings = new Map<number, NormalizedReading>();
+    try {
+      stationReadings = await fetchThaiWater();
+    } catch (error) {
+      sourceWarnings.push({ reason: "thaiwater_error", error: errorText(error) });
+    }
     const ridReadings = new Map<string, NormalizedReading>();
-    const sourceWarnings: Record<string, unknown>[] = [];
     await Promise.all(
       ((sites ?? []) as Site[])
         .filter((site) => site.station_code?.startsWith("TKS."))
@@ -282,7 +292,6 @@ export async function handlePoll(request: Request) {
         }),
     );
     const readingRows: Record<string, unknown>[] = [];
-    const skipped: Record<string, unknown>[] = [];
     for (const site of (sites ?? []) as Site[]) {
       if (!site.station_id) {
         skipped.push({ site_id: site.id, reason: "no_station" });
@@ -319,6 +328,7 @@ export async function handlePoll(request: Request) {
       })
       .select("id, site_id, wl_msl, wl_design, measured_at");
     if (readingsError) throw readingsError;
+    processedReadings = persisted?.length ?? 0;
 
     const siteById = new Map(
       ((sites ?? []) as Site[]).map((site) => [site.id, site]),
@@ -374,10 +384,14 @@ export async function handlePoll(request: Request) {
       .map((row) => new Date(row.measured_at).getTime())
       .filter(Number.isFinite)
       .reduce((max, value) => Math.max(max, value), 0);
+    const status = skipped.length || sourceWarnings.length ||
+        processedReadings < activeSites
+      ? "partial"
+      : "success";
     await finishRun(supabase, runId, {
-      status: "success",
-      active_sites: sites?.length ?? 0,
-      processed_readings: persisted?.length ?? 0,
+      status,
+      active_sites: activeSites,
+      processed_readings: processedReadings,
       alert_count: alerts.length,
       skipped: [...skipped, ...sourceWarnings],
       source_latest_at: sourceLatestAt
@@ -387,8 +401,9 @@ export async function handlePoll(request: Request) {
     return json({
       ok: true,
       run_id: runId,
-      active_sites: sites?.length ?? 0,
-      processed_readings: persisted?.length ?? 0,
+      status,
+      active_sites: activeSites,
+      processed_readings: processedReadings,
       alerts: alerts.length,
       skipped: [...skipped, ...sourceWarnings],
     });
@@ -397,6 +412,9 @@ export async function handlePoll(request: Request) {
     if (runId !== null) {
       await finishRun(supabase, runId, {
         status: "failed",
+        active_sites: activeSites,
+        processed_readings: processedReadings,
+        skipped: [...skipped, ...sourceWarnings],
         error_message: errorText(error),
       });
     }

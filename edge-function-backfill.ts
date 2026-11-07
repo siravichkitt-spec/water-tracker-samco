@@ -1,11 +1,10 @@
 // Supabase Edge Function: water-tracker-backfill
 // Restricted maintenance endpoint. It accepts the scheduler secret, never a public key.
 
-import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.112.3";
 
 const RID_HISTORY_URL =
-  "https://bigdata-api.rid.go.th/api/v1/ma/pier/rid/get_pier_by_station";
+  "https://bigdata.rid.go.th/api/ma/pier/rid/get_pier_by_station";
 
 function json(body: unknown, status = 200) {
   return new Response(JSON.stringify(body, null, 2), {
@@ -35,7 +34,7 @@ export function utcTimestamp(value: unknown): string | null {
 }
 
 export function finiteNumber(value: unknown): number | null {
-  if (value === null || value === undefined) return null;
+  if (typeof value !== "number" && typeof value !== "string") return null;
   if (typeof value === "string" && value.trim() === "") return null;
   const parsed = Number(value);
   return Number.isFinite(parsed) ? parsed : null;
@@ -111,7 +110,9 @@ export async function handleBackfill(request: Request) {
 
     const endDate = new Date();
     const startDate = new Date(endDate.getTime() - days * 86_400_000);
-    const dateOnly = (date: Date) => date.toISOString().slice(0, 10);
+    // RID date filters are Bangkok calendar dates, including after 17:00 UTC.
+    const dateOnly = (date: Date) =>
+      new Date(date.getTime() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
     const requestedStartAt = new Date(
       `${dateOnly(startDate)}T00:00:00+07:00`,
     ).getTime();
@@ -181,18 +182,19 @@ export async function handleBackfill(request: Request) {
             outOfRangePoints += 1;
             continue;
           }
-          if (point.wl_values === null || point.wl_values === undefined) {
+          // Only the explicit MSL field is safe for this database column.
+          if (point.wl_values_msl === null || point.wl_values_msl === undefined) {
             nullValues += 1;
             continue;
           }
           if (
-            typeof point.wl_values === "string" &&
-            point.wl_values.trim() === ""
+            typeof point.wl_values_msl === "string" &&
+            point.wl_values_msl.trim() === ""
           ) {
             emptyValues += 1;
             continue;
           }
-          const wlMsl = finiteNumber(point.wl_values);
+          const wlMsl = finiteNumber(point.wl_values_msl);
           if (wlMsl === null) {
             nonNumericValues += 1;
             continue;
